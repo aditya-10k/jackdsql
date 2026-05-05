@@ -1,0 +1,611 @@
+[
+  {
+    "chapter": "Module 1: The Blueprint (DDL & Theory)",
+    "title": "Relational Theory: Tables, Rows, Columns, and the 'Relational' Concept",
+    "theory": "The relational model, formalized by E.F. Codd in 1970, structures data into tables (relations) with specific mathematical properties. A table consists of rows (tuples) representing entities and columns (attributes) representing properties. The 'relational' aspect refers to the mathematical relationships between tables through shared key values, not arbitrary connections.\n\nIn PostgreSQL, every table must have a unique row identifier (ideally a primary key) to enforce referential integrity. The relational model guarantees ACID compliance when properly designed, making it the foundation of enterprise data systems. Understanding normalized table design prevents data anomalies (insertion, update, deletion anomalies) that plague poorly structured databases.",
+    "examples": [
+      {
+        "description": "A properly structured relational schema showing entities and relationships:",
+        "sql": "CREATE TABLE customers (customer_id SERIAL PRIMARY KEY, name TEXT NOT NULL); CREATE TABLE orders (order_id SERIAL PRIMARY KEY, customer_id INT REFERENCES customers(customer_id), order_date DATE);"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Identify Relational Structure",
+        "difficulty": "EASY",
+        "domain": "Data Modeling",
+        "questionText": "Given two tables: users(user_id, username) and posts(post_id, user_id, content). Explain the relational relationship and write a query to verify the relationship exists by retrieving a user and their posts.",
+        "schemaSql": "CREATE TABLE users (user_id SERIAL PRIMARY KEY, username TEXT NOT NULL); CREATE TABLE posts (post_id SERIAL PRIMARY KEY, user_id INT REFERENCES users(user_id), content TEXT); INSERT INTO users VALUES (1, 'alice'), (2, 'bob'); INSERT INTO posts VALUES (1, 1, 'Hello World'), (2, 1, 'SQL is great'), (3, 2, 'PostgreSQL rocks');",
+        "solutionQuery": "SELECT u.username, COUNT(p.post_id) AS post_count FROM users u LEFT JOIN posts p ON u.user_id = p.user_id GROUP BY u.user_id, u.username;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 1: The Blueprint (DDL & Theory)",
+    "title": "Data Types: Understanding Strings (VARCHAR/TEXT), Numerics, and Booleans",
+    "theory": "PostgreSQL provides a rich type system optimized for different data domains. VARCHAR(n) enforces a maximum length constraint, useful for business rules like phone numbers or postal codes. TEXT allows unlimited length and is preferred when no constraint is needed—PostgreSQL stores both efficiently using TOAST (The Oversized-Attribute Storage Technique).\n\nNumeric types include SMALLINT (16-bit), INT/INTEGER (32-bit), BIGINT (64-bit), NUMERIC/DECIMAL (arbitrary precision for financial data), and FLOAT/DOUBLE PRECISION (IEEE floating-point). For monetary values, always use NUMERIC with explicit precision rather than floating-point to avoid rounding errors. BOOLEAN stores TRUE/FALSE and NULL, with implicit conversions from integers (0=false, 1=true).",
+    "examples": [
+      {
+        "description": "Comprehensive table definition using appropriate data types for a product catalog:",
+        "sql": "CREATE TABLE products (product_id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, description TEXT, price NUMERIC(10, 2) NOT NULL, stock_quantity INT DEFAULT 0, is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Choose Appropriate Data Types",
+        "difficulty": "EASY",
+        "domain": "Database Design",
+        "questionText": "Design a table for an e-commerce system that stores: product name (max 100 chars), description (unlimited), unit price (to 2 decimal places), quantity in stock, and whether it's available for purchase. Use appropriate PostgreSQL data types.",
+        "schemaSql": "CREATE TABLE products (product_id SERIAL PRIMARY KEY, name VARCHAR(100), description TEXT, unit_price NUMERIC(8, 2), quantity_in_stock INT, is_available BOOLEAN);",
+        "solutionQuery": "INSERT INTO products (name, description, unit_price, quantity_in_stock, is_available) VALUES ('Premium Laptop', 'High-performance computing device', 1299.99, 15, TRUE); SELECT name, unit_price, is_available FROM products WHERE is_available = TRUE AND quantity_in_stock > 0;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 1: The Blueprint (DDL & Theory)",
+    "title": "Schema Definition: CREATE TABLE, DROP TABLE, and TRUNCATE",
+    "theory": "DDL (Data Definition Language) commands define database structure. CREATE TABLE establishes a new table with column definitions and constraints. PostgreSQL supports transactional DDL, allowing rollback of schema changes within a transaction, unlike some databases.\n\nDROP TABLE removes the table and its data permanently (unless wrapped in a transaction). CASCADE option automatically drops dependent objects (indexes, constraints). TRUNCATE efficiently removes all rows without logging individual deletions, making it faster for cleanup operations. However, TRUNCATE cannot be rolled back if executed outside a transaction, and it resets sequences. For data preservation, DELETE is safer; for bulk cleanup within a transaction, TRUNCATE is optimal.",
+    "examples": [
+      {
+        "description": "Complete DDL operations demonstrating CREATE, modification, and cleanup:",
+        "sql": "CREATE TABLE employees (employee_id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, last_name VARCHAR(50) NOT NULL, salary NUMERIC(10, 2), hire_date DATE DEFAULT CURRENT_DATE); TRUNCATE TABLE employees; DROP TABLE IF EXISTS employees;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Schema Lifecycle Management",
+        "difficulty": "MEDIUM",
+        "domain": "Database Administration",
+        "questionText": "Create a table for storing employee records with columns: employee_id (auto-incrementing primary key), first_name and last_name (required, 50 chars max), salary (2 decimal places), and hire_date (defaults to today). Then insert 3 sample records and retrieve them.",
+        "schemaSql": "CREATE TABLE employees (employee_id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, last_name VARCHAR(50) NOT NULL, salary NUMERIC(10, 2), hire_date DATE DEFAULT CURRENT_DATE);",
+        "solutionQuery": "INSERT INTO employees (first_name, last_name, salary) VALUES ('John', 'Doe', 75000.00), ('Jane', 'Smith', 82000.00), ('Bob', 'Johnson', 68000.00); SELECT employee_id, first_name, last_name, salary, hire_date FROM employees ORDER BY employee_id;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 1: The Blueprint (DDL & Theory)",
+    "title": "Constraints: The Guardians of Data Integrity (NOT NULL, UNIQUE, DEFAULT)",
+    "theory": "Constraints enforce business rules at the database layer, preventing invalid data from being inserted. NOT NULL ensures a column always contains a value (no NULL entries). UNIQUE guarantees no two rows have the same value in a column or column combination, creating an implicit index for fast lookups.\n\nDEFAULT provides a fallback value when none is explicitly provided during insertion, reducing application logic and ensuring consistency. Multiple UNIQUE constraints can exist on a table, but only one NOT NULL per column. PostgreSQL evaluates constraints on INSERT and UPDATE operations. For performance, avoid redundant UNIQUE constraints; use them strategically on columns frequently used in WHERE clauses or as lookups.",
+    "examples": [
+      {
+        "description": "Table design demonstrating NOT NULL, UNIQUE, and DEFAULT constraints:",
+        "sql": "CREATE TABLE users (user_id SERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL UNIQUE, username VARCHAR(50) NOT NULL UNIQUE, registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, is_verified BOOLEAN DEFAULT FALSE);"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Enforce Data Integrity with Constraints",
+        "difficulty": "MEDIUM",
+        "domain": "Data Validation",
+        "questionText": "Create a table for a social media platform storing users. Each user must have a unique email and username (both required). Track registration date (defaults to now) and verification status (defaults to false). Attempt to insert duplicate emails and observe the constraint violation.",
+        "schemaSql": "CREATE TABLE users (user_id SERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL UNIQUE, username VARCHAR(50) NOT NULL UNIQUE, registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, is_verified BOOLEAN DEFAULT FALSE);",
+        "solutionQuery": "INSERT INTO users (email, username) VALUES ('alice@example.com', 'alice'); INSERT INTO users (email, username) VALUES ('bob@example.com', 'bob'); SELECT user_id, email, username, registration_date, is_verified FROM users WHERE is_verified = FALSE;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 1: The Blueprint (DDL & Theory)",
+    "title": "Keys: Primary Keys vs. Foreign Keys",
+    "theory": "A Primary Key uniquely identifies each row in a table. It must be NOT NULL and UNIQUE, typically implemented as a SERIAL (auto-incrementing) column for ease of management. Primary keys enable efficient lookups and serve as the anchor for relationships with other tables.\n\nForeign Keys establish referential integrity by linking to another table's primary key. A foreign key column must match the data type of the referenced primary key. ON DELETE CASCADE automatically removes child records when a parent is deleted; ON DELETE SET NULL replaces the foreign key with NULL; ON DELETE RESTRICT prevents deletion if children exist. Proper foreign key design prevents orphaned records and ensures data consistency across the entire database.",
+    "examples": [
+      {
+        "description": "Demonstrating primary and foreign key relationships with referential actions:",
+        "sql": "CREATE TABLE departments (dept_id SERIAL PRIMARY KEY, dept_name VARCHAR(100) NOT NULL); CREATE TABLE employees (emp_id SERIAL PRIMARY KEY, emp_name VARCHAR(100) NOT NULL, dept_id INT NOT NULL REFERENCES departments(dept_id) ON DELETE CASCADE);"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Design Relational Structure with Keys",
+        "difficulty": "MEDIUM",
+        "domain": "Database Design",
+        "questionText": "Create two tables: departments (dept_id, dept_name) and employees (emp_id, emp_name, dept_id). Set up a foreign key relationship so deleting a department automatically removes its employees. Insert sample data and verify the relationship.",
+        "schemaSql": "CREATE TABLE departments (dept_id SERIAL PRIMARY KEY, dept_name VARCHAR(100) NOT NULL); CREATE TABLE employees (emp_id SERIAL PRIMARY KEY, emp_name VARCHAR(100) NOT NULL, dept_id INT NOT NULL REFERENCES departments(dept_id) ON DELETE CASCADE);",
+        "solutionQuery": "INSERT INTO departments (dept_name) VALUES ('Engineering'), ('Sales'); INSERT INTO employees (emp_name, dept_id) VALUES ('Alice', 1), ('Bob', 1), ('Charlie', 2); SELECT e.emp_name, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id ORDER BY d.dept_name;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 2: Basic Retrieval (The DQL Basics)",
+    "title": "The Projection Engine: SELECT and FROM",
+    "theory": "In relational algebra, the SELECT statement performs the 'Projection' operation. While most developers think of it as the first step, PostgreSQL actually processes the FROM clause first to establish the data source. The SELECT clause determines which columns are physically extracted from the storage engine and loaded into memory.\n\nProfessional SQL development avoids 'SELECT *' because it increases I/O overhead and can break applications if columns are added or removed from the underlying table. Using aliases (AS) allows you to rename columns for the result set, which is essential when the physical database naming conventions (like snake_case) don't match the desired UI output in your Flutter frontend.",
+    "examples": [
+      {
+        "description": "Basic projection with calculated columns and aliasing:",
+        "sql": "SELECT product_name, unit_price * 1.18 AS price_with_tax FROM products;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Renaming for Clarity",
+        "difficulty": "EASY",
+        "domain": "Retail",
+        "questionText": "The marketing team needs a list of all products. Retrieve the 'name' column but alias it as 'Product_Identity' so it fits their reporting template.",
+        "schemaSql": "CREATE TABLE products (name TEXT, price INT); INSERT INTO products VALUES ('Laptop', 1000), ('Mouse', 25);",
+        "solutionQuery": "SELECT name AS \"Product_Identity\" FROM products;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 2: Basic Retrieval (The DQL Basics)",
+    "title": "Alias & Expressions: Renaming Columns and Basic Arithmetic in Queries",
+    "theory": "Column aliases provide custom names for result set columns, improving readability for consumers of the query. Aliases are essential when performing calculations or concatenations—the derived column has no implicit name without an alias. SQL expressions can include arithmetic operators (+, -, *, /), string concatenation (|| in PostgreSQL), and function calls.\n\nTable aliases shorten query syntax in complex queries and are required when referencing the same table multiple times. Aliases must be assigned before use in the same query block. CAST or '::' operator converts data types explicitly (e.g., '123'::INTEGER converts a string literal to an integer). Expressions are evaluated left-to-right with operator precedence; use parentheses for clarity.",
+    "examples": [
+      {
+        "description": "Complex expressions with arithmetic, string concatenation, and aliasing:",
+        "sql": "SELECT emp_id, first_name || ' ' || last_name AS full_name, salary * 1.15 AS salary_after_raise, CAST(salary * 0.12 AS NUMERIC(10, 2)) AS annual_bonus FROM employees e WHERE e.salary > 50000;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Calculated Fields and Concatenation",
+        "difficulty": "EASY",
+        "domain": "Business Intelligence",
+        "questionText": "Create a report showing employee ID, full name (concatenated from first and last name), monthly salary (annual salary divided by 12), and an identifier combining department code and last name. Use appropriate aliases.",
+        "schemaSql": "CREATE TABLE employees (emp_id INT, first_name VARCHAR(50), last_name VARCHAR(50), annual_salary NUMERIC(10, 2), dept_code VARCHAR(10)); INSERT INTO employees VALUES (1, 'John', 'Doe', 60000, 'ENG'), (2, 'Jane', 'Smith', 72000, 'SAL');",
+        "solutionQuery": "SELECT emp_id, first_name || ' ' || last_name AS full_name, annual_salary / 12 AS monthly_salary, dept_code || '-' || last_name AS dept_employee_id FROM employees;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 2: Basic Retrieval (The DQL Basics)",
+    "title": "Distinct Results: Removing Duplicates with DISTINCT",
+    "theory": "DISTINCT eliminates duplicate rows from result sets, useful for finding unique values across columns. Applying DISTINCT to a single column shows all unique values in that column; applying it across multiple columns shows unique combinations. DISTINCT is expensive computationally—PostgreSQL must sort or use hash aggregation to identify duplicates.\n\nFor production queries, avoid DISTINCT as a 'band-aid' for poor schema design or missing WHERE clauses. If duplicates appear unexpectedly, investigate the query logic first. DISTINCT NULL is included once in results (NULL = NULL in DISTINCT logic). For large datasets, consider alternative approaches like GROUP BY with aggregation or EXISTS subqueries.",
+    "examples": [
+      {
+        "description": "Finding unique combinations of country and city from a customer table:",
+        "sql": "SELECT DISTINCT country, city FROM customers ORDER BY country, city;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Identify Unique Values",
+        "difficulty": "EASY",
+        "domain": "Data Analysis",
+        "questionText": "A customers table has fields: customer_id, country, and city. Some customers are from the same cities. Find all unique country-city combinations and order them alphabetically.",
+        "schemaSql": "CREATE TABLE customers (customer_id INT, country VARCHAR(50), city VARCHAR(50)); INSERT INTO customers VALUES (1, 'USA', 'New York'), (2, 'USA', 'Los Angeles'), (3, 'USA', 'New York'), (4, 'Canada', 'Toronto'), (5, 'Canada', 'Toronto');",
+        "solutionQuery": "SELECT DISTINCT country, city FROM customers ORDER BY country, city;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 3: Filtering & Logic",
+    "title": "Predicate Logic: The WHERE Clause and Comparison Operators",
+    "theory": "The WHERE clause filters rows based on predicates (conditions that evaluate to TRUE, FALSE, or NULL). Comparison operators include = (equality), != or <> (inequality), < (less than), > (greater than), <= (less than or equal), >= (greater than or equal). WHERE is processed after FROM but before SELECT in query execution, making it more efficient to filter early than to retrieve all data and filter in the application.\n\nComparisons against NULL always produce NULL (never TRUE or FALSE), requiring special IS NULL / IS NOT NULL syntax. String comparisons are case-sensitive by default in PostgreSQL but respect collation settings. Multiple conditions can be combined with AND, OR, and NOT operators. Index usage on WHERE clause columns dramatically improves query performance.",
+    "examples": [
+      {
+        "description": "Multiple comparison operators demonstrating filtering logic:",
+        "sql": "SELECT order_id, customer_id, order_date, total_amount FROM orders WHERE order_date >= '2024-01-01' AND total_amount > 100 AND status <> 'cancelled';"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Filter with Multiple Conditions",
+        "difficulty": "EASY",
+        "domain": "E-Commerce",
+        "questionText": "From an orders table, retrieve orders placed in 2024 with a total amount greater than $500 that were not cancelled. Show order_id, customer_id, and total_amount.",
+        "schemaSql": "CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE, total_amount NUMERIC(10, 2), status VARCHAR(50)); INSERT INTO orders VALUES (1, 101, '2024-01-15', 750.00, 'completed'), (2, 102, '2024-02-20', 450.00, 'completed'), (3, 103, '2024-03-10', 600.00, 'cancelled'), (4, 104, '2024-04-05', 550.00, 'completed');",
+        "solutionQuery": "SELECT order_id, customer_id, total_amount FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2024 AND total_amount > 500 AND status <> 'cancelled';"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 3: Filtering & Logic",
+    "title": "Boolean Algebra: Combining Filters with AND, OR, and NOT",
+    "theory": "Boolean operators combine multiple predicates into complex conditions. AND requires all conditions to be TRUE (logical conjunction). OR requires at least one condition to be TRUE (logical disjunction). NOT inverts the truth value of a predicate. Precedence matters: NOT > AND > OR, but parentheses override precedence for clarity.\n\nDeMorgan's Laws state: NOT (A AND B) = (NOT A) OR (NOT B) and NOT (A OR B) = (NOT A) AND (NOT B). Understanding these transformations helps optimize complex filters. For readability, use parentheses liberally even when not required. Short-circuit evaluation means PostgreSQL stops evaluating when the result is determined (though specific details vary by implementation).",
+    "examples": [
+      {
+        "description": "Complex boolean logic with proper precedence and parentheses:",
+        "sql": "SELECT product_id, name, price FROM products WHERE (category = 'Electronics' OR category = 'Accessories') AND price BETWEEN 100 AND 1000 AND NOT is_discontinued;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Complex Filtering Logic",
+        "difficulty": "MEDIUM",
+        "domain": "Inventory Management",
+        "questionText": "Find products that are either in 'Electronics' or 'Home & Garden' categories, priced between $50 and $500, and are currently active (not discontinued). Exclude any products with zero stock.",
+        "schemaSql": "CREATE TABLE products (product_id INT, name VARCHAR(100), category VARCHAR(50), price NUMERIC(10, 2), stock INT, is_discontinued BOOLEAN); INSERT INTO products VALUES (1, 'Laptop', 'Electronics', 1200, 5, FALSE), (2, 'Chair', 'Home & Garden', 150, 0, FALSE), (3, 'Monitor', 'Electronics', 300, 8, FALSE), (4, 'Old Product', 'Electronics', 200, 3, TRUE);",
+        "solutionQuery": "SELECT product_id, name, category, price, stock FROM products WHERE (category = 'Electronics' OR category = 'Home & Garden') AND price BETWEEN 50 AND 500 AND NOT is_discontinued AND stock > 0;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 3: Filtering & Logic",
+    "title": "The NULL Trap: Three-Valued Logic (IS NULL vs. IS NOT NULL)",
+    "theory": "NULL represents the absence of a value, not zero or an empty string. PostgreSQL uses three-valued logic where comparisons with NULL return NULL (not TRUE or FALSE). This breaks traditional boolean logic: NULL = NULL returns NULL, not TRUE. The only correct way to test for NULL is IS NULL or IS NOT NULL.\n\nThis creates subtle bugs when filtering: WHERE status = NULL matches no rows (even if status is NULL). WHERE status != NULL also matches no rows. The COALESCE function converts NULL to a default value for comparisons. In aggregate functions, NULL values are typically ignored (COUNT(*) counts NULLs, COUNT(column) doesn't). Understanding NULL handling is critical for correct business logic, especially in financial calculations or missing data scenarios.",
+    "examples": [
+      {
+        "description": "Proper NULL handling with IS NULL, IS NOT NULL, and COALESCE:",
+        "sql": "SELECT customer_id, name, phone, COALESCE(phone, 'No phone number') AS contact_phone FROM customers WHERE phone IS NULL OR phone IS NOT NULL;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Handle Missing Data Correctly",
+        "difficulty": "MEDIUM",
+        "domain": "Data Quality",
+        "questionText": "From a customers table, find all customers with missing phone numbers (NULL values). Also retrieve customers with phone numbers, and display a user-friendly phone field showing 'Not provided' for NULL values.",
+        "schemaSql": "CREATE TABLE customers (customer_id INT, name VARCHAR(100), phone VARCHAR(20)); INSERT INTO customers VALUES (1, 'Alice', '555-1234'), (2, 'Bob', NULL), (3, 'Charlie', '555-5678'), (4, 'Diana', NULL);",
+        "solutionQuery": "SELECT customer_id, name, COALESCE(phone, 'Not provided') AS phone_display FROM customers WHERE phone IS NULL; SELECT customer_id, name, phone FROM customers WHERE phone IS NOT NULL;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 3: Filtering & Logic",
+    "title": "Pattern Matching: Using LIKE, ILIKE, and Wildcards (%, _)",
+    "theory": "LIKE performs pattern matching on strings with two wildcards: % (matches zero or more characters) and _ (matches exactly one character). LIKE is case-sensitive by default; ILIKE is case-insensitive. Pattern matching is slower than exact matches or index-based lookups because it cannot use standard B-tree indexes efficiently (though PostgreSQL optimizes LIKE patterns starting with non-wildcard characters).\n\nFor performance, use exact matching when possible. Avoid leading wildcards ('%pattern') as they prevent index usage. Regular expressions (~ operator) offer more sophisticated matching but are slower. The ESCAPE clause allows literal matching of % and _ characters (e.g., LIKE '%50\\\\ OFF%' ESCAPE '\\\\' matches the literal string '50% OFF').",
+    "examples": [
+      {
+        "description": "Pattern matching for email validation and product name search:",
+        "sql": "SELECT user_id, email FROM users WHERE email LIKE '%@%.%'; SELECT product_id, name FROM products WHERE name ILIKE '%laptop%' ORDER BY name;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Search Products by Name Pattern",
+        "difficulty": "EASY",
+        "domain": "Search Functionality",
+        "questionText": "Find all products whose names contain 'pro' (case-insensitive). Also find products that start with 'Premium' and have exactly 5 characters after that (using the underscore wildcard).",
+        "schemaSql": "CREATE TABLE products (product_id INT, name VARCHAR(100)); INSERT INTO products VALUES (1, 'Professional Camera'), (2, 'Pro Microphone'), (3, 'Premium Laptop'), (4, 'Premium Monitor'), (5, 'budget phone');",
+        "solutionQuery": "SELECT product_id, name FROM products WHERE name ILIKE '%pro%' ORDER BY name; SELECT product_id, name FROM products WHERE name LIKE 'Premium_____';"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 3: Filtering & Logic",
+    "title": "Range & Sets: Using BETWEEN and IN",
+    "theory": "BETWEEN filters rows where a value falls within a specified range (inclusive on both ends). BETWEEN a AND b is equivalent to >= a AND <= b. BETWEEN is more readable and can be indexed efficiently compared to multiple comparison operators.\n\nIN tests membership in a set of values, replacing multiple OR conditions. IN (...) is more readable than status = 'pending' OR status = 'processing' OR status = 'failed'. IN accepts a comma-separated list or a subquery result. For large sets (100+ values), subqueries with indexes often outperform IN with literal values. PostgreSQL optimizes IN with hash joins or nested loop joins depending on data distribution and indexes.",
+    "examples": [
+      {
+        "description": "Using BETWEEN for date ranges and IN for categorical filtering:",
+        "sql": "SELECT order_id, customer_id, order_date, status FROM orders WHERE order_date BETWEEN '2024-01-01' AND '2024-12-31' AND status IN ('completed', 'processing', 'pending');"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Filter by Range and Category",
+        "difficulty": "EASY",
+        "domain": "Analytics",
+        "questionText": "Find all orders placed in Q1 2024 (January 1 to March 31) with status 'completed' or 'pending'. Show order_id, customer_id, order_date, and status.",
+        "schemaSql": "CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE, status VARCHAR(50)); INSERT INTO orders VALUES (1, 101, '2024-01-15', 'completed'), (2, 102, '2024-02-20', 'pending'), (3, 103, '2024-04-10', 'completed'), (4, 104, '2024-03-05', 'cancelled');",
+        "solutionQuery": "SELECT order_id, customer_id, order_date, status FROM orders WHERE order_date BETWEEN '2024-01-01' AND '2024-03-31' AND status IN ('completed', 'pending');"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 4: Organization & Result Sets",
+    "title": "Sorting: ORDER BY (ASC/DESC)",
+    "theory": "ORDER BY sorts result sets by one or more columns. ASC (ascending) is the default; DESC (descending) reverses the sort. Sorting is applied after all filtering and aggregation, making it one of the last operations in query execution. NULL values sort first in ASC order and last in DESC order by default (NULLS FIRST / NULLS LAST options override this).\n\nMultiple columns in ORDER BY create hierarchical sorting: first column determines order, then within ties, the second column applies. Sorting without an index requires a sort operation in memory or disk, consuming resources. For production systems, avoid sorting on large result sets; use LIMIT to restrict results before sorting, or ensure indexes exist on sorted columns. Sorting text is affected by collation settings and locale.",
+    "examples": [
+      {
+        "description": "Multi-column sorting with explicit ASC/DESC and NULL handling:",
+        "sql": "SELECT product_id, category, price, stock FROM products ORDER BY category ASC, price DESC NULLS LAST LIMIT 50;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Sorted Result Sets for Reporting",
+        "difficulty": "EASY",
+        "domain": "Reporting",
+        "questionText": "Create a product report sorted first by category (A-Z), then by price (highest to lowest). Show product_id, category, and price. Limit to the top 20 results.",
+        "schemaSql": "CREATE TABLE products (product_id INT, category VARCHAR(50), price NUMERIC(10, 2)); INSERT INTO products VALUES (1, 'Electronics', 999), (2, 'Electronics', 199), (3, 'Home', 49.99), (4, 'Home', 79.99), (5, 'Sports', 150);",
+        "solutionQuery": "SELECT product_id, category, price FROM products ORDER BY category ASC, price DESC LIMIT 20;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 4: Organization & Result Sets",
+    "title": "Pagination: LIMIT and OFFSET for Professional APIs",
+    "theory": "LIMIT restricts the number of rows returned; OFFSET skips a specified number of rows before returning results. Together, they enable pagination for UI components and APIs. LIMIT 10 OFFSET 20 returns rows 21-30 (zero-indexed offsets).\n\nFor large datasets, OFFSET becomes inefficient because PostgreSQL must evaluate and discard all skipped rows. Professional APIs use keyset pagination instead: remember the last returned value and filter with WHERE id > last_id, avoiding the O(n) cost of OFFSET. LIMIT ALL removes any limit. Always pair LIMIT/OFFSET with ORDER BY to ensure consistent pagination; without sorting, row order is undefined and can change between requests.",
+    "examples": [
+      {
+        "description": "Pagination for API responses with ORDER BY ensuring consistency:",
+        "sql": "SELECT customer_id, name, email FROM customers ORDER BY customer_id ASC LIMIT 25 OFFSET 50;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Implement API Pagination",
+        "difficulty": "MEDIUM",
+        "domain": "API Development",
+        "questionText": "Implement pagination for a customer API that returns 10 customers per page. Retrieve page 3 (customers 21-30) when customers are sorted by ID in ascending order.",
+        "schemaSql": "CREATE TABLE customers (customer_id SERIAL PRIMARY KEY, name VARCHAR(100), email VARCHAR(100)); INSERT INTO customers (name, email) SELECT 'Customer' || i, 'customer' || i || '@example.com' FROM generate_series(1, 50) i;",
+        "solutionQuery": "SELECT customer_id, name, email FROM customers ORDER BY customer_id ASC LIMIT 10 OFFSET 20;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 5: Data Manipulation (DML)",
+    "title": "Insertion: INSERT INTO (Single vs. Bulk)",
+    "theory": "INSERT INTO adds new rows to a table. Single-row inserts specify explicit values: INSERT INTO table (col1, col2) VALUES (val1, val2). Bulk inserts use multiple value sets: INSERT INTO table (...) VALUES (...), (...), (...). Bulk inserts are significantly faster than multiple individual statements because they execute in a single transaction and reduce round-trips.\n\nINSERT ... SELECT copies rows from a query result into a table, useful for data migration or aggregation tables. Default values and auto-incrementing columns (SERIAL) can be omitted from the column list. The RETURNING clause returns inserted rows (PostgreSQL feature): INSERT ... RETURNING * shows what was inserted. Constraints (NOT NULL, UNIQUE, FOREIGN KEY) are validated during insertion.",
+    "examples": [
+      {
+        "description": "Single insert, bulk insert, and INSERT...SELECT operations:",
+        "sql": "INSERT INTO products (name, price) VALUES ('Laptop', 1299.99); INSERT INTO products (name, price) VALUES ('Mouse', 25.99), ('Keyboard', 79.99), ('Monitor', 399.99); INSERT INTO product_archive SELECT * FROM products WHERE discontinued = TRUE;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Populate Table with Multiple Insert Strategies",
+        "difficulty": "MEDIUM",
+        "domain": "Data Loading",
+        "questionText": "Create a products table and insert a single laptop product. Then bulk insert 3 more products (mouse, keyboard, monitor). Finally, use INSERT...SELECT to copy all products into an archive table.",
+        "schemaSql": "CREATE TABLE products (product_id SERIAL PRIMARY KEY, name VARCHAR(100), price NUMERIC(10, 2)); CREATE TABLE product_archive AS SELECT * FROM products WHERE FALSE;",
+        "solutionQuery": "INSERT INTO products (name, price) VALUES ('Laptop', 1299.99); INSERT INTO products (name, price) VALUES ('Mouse', 25.99), ('Keyboard', 79.99), ('Monitor', 399.99); INSERT INTO product_archive SELECT * FROM products; SELECT * FROM product_archive;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 5: Data Manipulation (DML)",
+    "title": "Updates: The UPDATE Statement (and the Danger of Missing WHERE)",
+    "theory": "UPDATE modifies existing rows. The syntax is UPDATE table SET col1 = val1, col2 = val2 WHERE condition. The WHERE clause is critical—without it, ALL rows are updated. This is one of the most common production incidents: UPDATE employees SET salary = salary * 1.1 without WHERE updates everyone's salary.\n\nUpdates can use expressions referencing other columns or even subqueries. RETURNING shows updated rows (PostgreSQL feature). Constraints are validated: updating a foreign key to a non-existent reference fails. For safety, test UPDATE queries with SELECT first using the same WHERE clause. Triggers can enforce additional logic. Avoid UPDATE with JOIN in subqueries; use INNER JOIN directly on UPDATE when possible (PostgreSQL syntax varies; check version compatibility).",
+    "examples": [
+      {
+        "description": "Safe UPDATE with WHERE clause, expression-based updates, and verification:",
+        "sql": "SELECT * FROM employees WHERE department_id = 5; UPDATE employees SET salary = salary * 1.1, last_review_date = CURRENT_DATE WHERE department_id = 5 AND years_employed > 3;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Safe Update Operations",
+        "difficulty": "MEDIUM",
+        "domain": "Data Maintenance",
+        "questionText": "Update employee salaries: give a 5% raise to all employees in department 3 who have been with the company for more than 2 years. First, verify the affected records with SELECT, then perform the update.",
+        "schemaSql": "CREATE TABLE employees (emp_id INT, name VARCHAR(100), dept_id INT, salary NUMERIC(10, 2), hire_date DATE); INSERT INTO employees VALUES (1, 'Alice', 3, 60000, '2021-06-15'), (2, 'Bob', 3, 55000, '2019-01-10'), (3, 'Charlie', 2, 65000, '2022-03-20');",
+        "solutionQuery": "SELECT emp_id, name, salary FROM employees WHERE dept_id = 3 AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, hire_date)) > 2; UPDATE employees SET salary = salary * 1.05 WHERE dept_id = 3 AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, hire_date)) > 2;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 5: Data Manipulation (DML)",
+    "title": "Deletion: DELETE FROM",
+    "theory": "DELETE removes rows matching a WHERE condition. Like UPDATE, DELETE without WHERE removes all rows—catastrophic in production. DELETE is logged fully, making it slower than TRUNCATE for large deletions but allowing transaction rollback.\n\nForeign key constraints prevent deletion if child records exist (unless ON DELETE CASCADE is specified). Cascading deletes can have unintended side effects; explicit awareness is required. RETURNING shows deleted rows. For soft deletes (marking records as deleted without removing), add an is_deleted BOOLEAN column and filter with WHERE is_deleted = FALSE in SELECT queries. Hard deletes (physical removal) are permanent; ensure proper backups before large deletions.",
+    "examples": [
+      {
+        "description": "Safe deletion with WHERE clause and cascading delete behavior:",
+        "sql": "DELETE FROM orders WHERE order_date < '2020-01-01' AND status = 'cancelled'; DELETE FROM customers WHERE customer_id = 42;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Safe Deletion with Verification",
+        "difficulty": "MEDIUM",
+        "domain": "Data Cleanup",
+        "questionText": "Delete all cancelled orders from 2023. First, verify which orders will be deleted using SELECT with the same WHERE condition. Then execute the DELETE.",
+        "schemaSql": "CREATE TABLE orders (order_id INT, order_date DATE, status VARCHAR(50), total NUMERIC(10, 2)); INSERT INTO orders VALUES (1, '2023-01-15', 'cancelled', 100), (2, '2023-06-20', 'completed', 200), (3, '2023-12-30', 'cancelled', 150);",
+        "solutionQuery": "SELECT order_id, order_date, status FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2023 AND status = 'cancelled'; DELETE FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2023 AND status = 'cancelled';"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 6: Aggregations & Grouping",
+    "title": "Aggregate Functions: COUNT, SUM, AVG, MIN, MAX",
+    "theory": "Aggregate functions compute single values from multiple rows. COUNT counts rows (COUNT(*) includes NULLs; COUNT(column) excludes them). SUM and AVG work on numeric columns and skip NULL values. MIN/MAX work on any comparable data type (numbers, dates, strings).\n\nWithout GROUP BY, aggregates compress the entire result set into one row. NULL handling varies: COUNT(DISTINCT column) counts unique non-NULL values; SUM of all NULLs returns NULL (not 0). For empty sets, COUNT returns 0; SUM/AVG/MIN/MAX return NULL. Aggregates in SELECT require all non-aggregated columns to appear in GROUP BY (unless using window functions or CTEs).",
+    "examples": [
+      {
+        "description": "Various aggregate functions for sales analysis:",
+        "sql": "SELECT COUNT(*) AS total_orders, COUNT(DISTINCT customer_id) AS unique_customers, SUM(total_amount) AS revenue, AVG(total_amount) AS avg_order_value, MIN(total_amount) AS min_order, MAX(total_amount) AS max_order FROM orders WHERE order_date BETWEEN '2024-01-01' AND '2024-12-31';"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Sales Metrics Calculation",
+        "difficulty": "MEDIUM",
+        "domain": "Analytics",
+        "questionText": "Analyze 2024 sales: calculate total orders, unique customers, total revenue, average order value, and the highest single order amount.",
+        "schemaSql": "CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE, total_amount NUMERIC(10, 2)); INSERT INTO orders VALUES (1, 101, '2024-01-10', 500), (2, 102, '2024-02-15', 750), (3, 101, '2024-03-20', 600), (4, 103, '2024-04-25', 1200);",
+        "solutionQuery": "SELECT COUNT(*) AS total_orders, COUNT(DISTINCT customer_id) AS unique_customers, SUM(total_amount) AS total_revenue, AVG(total_amount) AS avg_order_value, MAX(total_amount) AS highest_order FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2024;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 6: Aggregations & Grouping",
+    "title": "Bucketing Data: GROUP BY Logic",
+    "theory": "GROUP BY partitions rows into groups based on one or more columns. Aggregate functions are then applied within each group independently. Logically, GROUP BY executes after WHERE but before SELECT, allowing complex multi-level aggregations.\n\nColumns in SELECT must either be in GROUP BY or wrapped in an aggregate function (PostgreSQL enforces this strictly; some databases are lenient). Multiple columns in GROUP BY create composite groupings. NULL values are grouped together (NULL GROUP BY col = NULL GROUP BY col is TRUE). For performance, GROUP BY on indexed columns is significantly faster. HAVING filters groups after aggregation (unlike WHERE which filters rows before).",
+    "examples": [
+      {
+        "description": "Multi-level grouping to analyze sales by department and month:",
+        "sql": "SELECT department, EXTRACT(YEAR FROM order_date) AS year, EXTRACT(MONTH FROM order_date) AS month, COUNT(*) AS order_count, SUM(total_amount) AS revenue FROM orders GROUP BY department, EXTRACT(YEAR FROM order_date), EXTRACT(MONTH FROM order_date) ORDER BY department, year, month;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Group and Aggregate Complex Data",
+        "difficulty": "MEDIUM",
+        "domain": "Business Intelligence",
+        "questionText": "Group orders by customer and calculate: order count, total revenue, and average order value per customer. Order results by total revenue descending.",
+        "schemaSql": "CREATE TABLE orders (order_id INT, customer_id INT, customer_name VARCHAR(100), total_amount NUMERIC(10, 2)); INSERT INTO orders VALUES (1, 101, 'Alice', 500), (2, 101, 'Alice', 600), (3, 102, 'Bob', 750), (4, 102, 'Bob', 400), (5, 103, 'Charlie', 1200);",
+        "solutionQuery": "SELECT customer_id, customer_name, COUNT(*) AS order_count, SUM(total_amount) AS total_revenue, AVG(total_amount) AS avg_order_value FROM orders GROUP BY customer_id, customer_name ORDER BY total_revenue DESC;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 6: Aggregations & Grouping",
+    "title": "Post-Aggregation Filtering: The HAVING Clause",
+    "theory": "HAVING filters groups after aggregation, whereas WHERE filters rows before. This distinction is crucial: WHERE user_id = 5 filters individual rows; HAVING COUNT(*) > 10 filters groups where the count exceeds 10. HAVING allows complex conditions on aggregate functions.\n\nCommon pattern: WHERE filters individual rows before grouping, HAVING filters results after grouping. For example, WHERE status = 'completed' removes incomplete orders before counting, while HAVING COUNT(*) > 5 removes groups with fewer than 5 orders. HAVING references aggregate functions directly (HAVING SUM(amount) > 1000) or grouped columns (HAVING category = 'Premium'). ORDER BY post-processes final results.",
+    "examples": [
+      {
+        "description": "WHERE before grouping, HAVING after grouping for complex business logic:",
+        "sql": "SELECT category, COUNT(*) AS product_count, AVG(price) AS avg_price FROM products WHERE is_active = TRUE GROUP BY category HAVING COUNT(*) >= 5 AND AVG(price) > 100 ORDER BY avg_price DESC;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Filter Groups After Aggregation",
+        "difficulty": "MEDIUM",
+        "domain": "Analytics",
+        "questionText": "Find product categories with at least 5 active products where the average price exceeds $100. Show category, product count, and average price.",
+        "schemaSql": "CREATE TABLE products (product_id INT, category VARCHAR(50), price NUMERIC(10, 2), is_active BOOLEAN); INSERT INTO products VALUES (1, 'Electronics', 500, TRUE), (2, 'Electronics', 600, TRUE), (3, 'Electronics', 700, TRUE), (4, 'Electronics', 400, TRUE), (5, 'Electronics', 550, TRUE), (6, 'Home', 150, TRUE), (7, 'Home', 200, TRUE), (8, 'Home', 80, TRUE);",
+        "solutionQuery": "SELECT category, COUNT(*) AS product_count, AVG(price) AS avg_price FROM products WHERE is_active = TRUE GROUP BY category HAVING COUNT(*) >= 5 AND AVG(price) > 100 ORDER BY avg_price DESC;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 7: Relational Logic (Joins)",
+    "title": "The Inner Join: Matching Data Across Tables",
+    "theory": "INNER JOIN combines rows from two tables based on a join condition, returning only rows where the condition is TRUE. Rows from either table that don't match are excluded. INNER JOIN is the most common join type in relational queries.\n\nJoin syntax: SELECT ... FROM table1 INNER JOIN table2 ON table1.fk = table2.pk. The ON clause specifies the join condition, typically linking a foreign key to a primary key. Multiple conditions in ON are possible (AND/OR). Join order (table1 vs table2) doesn't affect results for INNER JOIN, but query optimizer considerations may exist. Self-joins join a table to itself: SELECT ... FROM employees e1 INNER JOIN employees e2 ON e1.manager_id = e2.emp_id finds manager-employee pairs.",
+    "examples": [
+      {
+        "description": "Multiple inner joins connecting customers to orders to order_items:",
+        "sql": "SELECT c.customer_id, c.name, o.order_id, oi.product_id, oi.quantity FROM customers c INNER JOIN orders o ON c.customer_id = o.customer_id INNER JOIN order_items oi ON o.order_id = oi.order_id;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Join Customer and Order Data",
+        "difficulty": "MEDIUM",
+        "domain": "Data Integration",
+        "questionText": "Create customers and orders tables. Find all orders placed by customers, showing customer name, order ID, and order date. Use an INNER JOIN.",
+        "schemaSql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT PRIMARY KEY, customer_id INT, order_date DATE); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1, '2024-01-15'), (102, 1, '2024-02-20'), (103, 2, '2024-03-10');",
+        "solutionQuery": "SELECT c.customer_id, c.name, o.order_id, o.order_date FROM customers c INNER JOIN orders o ON c.customer_id = o.customer_id ORDER BY c.customer_id, o.order_date;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 7: Relational Logic (Joins)",
+    "title": "Outer Joins: LEFT, RIGHT, and FULL Joins (Handling Orphans)",
+    "theory": "Outer joins preserve unmatched rows from one or both tables. LEFT JOIN includes all rows from the left table and matching rows from the right; unmatched right rows are NULL-filled. RIGHT JOIN does the reverse. FULL OUTER JOIN returns all rows from both tables, using NULLs for unmatched sides.\n\nOuter joins are essential for finding orphans: customers with no orders (SELECT * FROM customers LEFT JOIN orders ... WHERE orders.order_id IS NULL), or products never ordered. Performance differs: LEFT JOIN typically performs better than RIGHT JOIN (optimizer preference). FULL OUTER JOIN is useful for reconciliation: identifying records present in either table. Cardinality (one-to-many, one-to-one) affects outer join results; a customer with multiple orders appears as multiple result rows.",
+    "examples": [
+      {
+        "description": "LEFT, RIGHT, and FULL OUTER JOIN examples showing orphans and mismatches:",
+        "sql": "SELECT c.customer_id, c.name, COUNT(o.order_id) AS order_count FROM customers c LEFT JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id, c.name HAVING COUNT(o.order_id) = 0;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Find Unmatched Records",
+        "difficulty": "MEDIUM",
+        "domain": "Data Reconciliation",
+        "questionText": "Find all customers who have NOT placed any orders. Use a LEFT JOIN and WHERE clause to identify orphans.",
+        "schemaSql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT PRIMARY KEY, customer_id INT); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1), (102, 1), (103, 2);",
+        "solutionQuery": "SELECT c.customer_id, c.name FROM customers c LEFT JOIN orders o ON c.customer_id = o.customer_id WHERE o.order_id IS NULL;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 7: Relational Logic (Joins)",
+    "title": "Self Joins: Hierarchical Data (Manager-Employee Relationships)",
+    "theory": "A self-join connects a table to itself, useful for hierarchical or recursive data like organizational charts. Require table aliases to disambiguate the two logical copies. Syntax: SELECT ... FROM table t1 JOIN table t2 ON t1.parent_id = t2.id.\n\nCommon use case: employee has manager_id pointing to another employee's id. Self-joins can be INNER (only show employees with managers) or LEFT (show employees without managers). For deep hierarchies (multiple levels up), recursive CTEs (WITH RECURSIVE) are more appropriate than multiple self-joins. Performance depends on index availability on the foreign key column.",
+    "examples": [
+      {
+        "description": "Self-join showing employee-manager relationships:",
+        "sql": "SELECT e.emp_id, e.emp_name, e.manager_id, m.emp_name AS manager_name FROM employees e LEFT JOIN employees m ON e.manager_id = m.emp_id;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Build Organizational Chart",
+        "difficulty": "MEDIUM",
+        "domain": "HR Analytics",
+        "questionText": "Create an employees table where each employee has a manager_id pointing to another employee. Use a self-join to display each employee with their manager's name.",
+        "schemaSql": "CREATE TABLE employees (emp_id INT PRIMARY KEY, emp_name VARCHAR(100), manager_id INT REFERENCES employees(emp_id)); INSERT INTO employees VALUES (1, 'CEO', NULL), (2, 'VP Engineering', 1), (3, 'VP Sales', 1), (4, 'Engineer A', 2), (5, 'Engineer B', 2);",
+        "solutionQuery": "SELECT e.emp_id, e.emp_name, COALESCE(m.emp_name, 'No Manager') AS manager_name FROM employees e LEFT JOIN employees m ON e.manager_id = m.emp_id ORDER BY e.emp_id;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 7: Relational Logic (Joins)",
+    "title": "Cross Joins: Cartesian Products",
+    "theory": "CROSS JOIN produces a Cartesian product: every row from the left table combined with every row from the right table. Result set size = left_rows × right_rows. Use carefully; a 1000 × 1000 cross join produces 1,000,000 rows.\n\nLegitimate uses are rare but include: generating all possible combinations (sizes × colors for a matrix), date ranges, or permission matrices. Syntax: SELECT ... FROM table1 CROSS JOIN table2 (no ON clause required). Can be written as SELECT ... FROM table1, table2 (implicit cross join). Performance is linear in result set size; avoid accidentally cross-joining large tables. In practice, most cross joins happen unintentionally due to missing join conditions.",
+    "examples": [
+      {
+        "description": "Cross join to generate all size-color combinations:",
+        "sql": "SELECT s.size, c.color FROM sizes s CROSS JOIN colors c ORDER BY s.size, c.color;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Generate Combinations with Cross Join",
+        "difficulty": "EASY",
+        "domain": "Product Catalog",
+        "questionText": "Create sizes and colors tables. Use a CROSS JOIN to generate all possible size-color combinations for products.",
+        "schemaSql": "CREATE TABLE sizes (size_id INT, size_name VARCHAR(10)); CREATE TABLE colors (color_id INT, color_name VARCHAR(20)); INSERT INTO sizes VALUES (1, 'S'), (2, 'M'), (3, 'L'); INSERT INTO colors VALUES (1, 'Red'), (2, 'Blue'), (3, 'Green');",
+        "solutionQuery": "SELECT s.size_name, c.color_name FROM sizes s CROSS JOIN colors c ORDER BY s.size_name, c.color_name;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 8: Advanced Concepts",
+    "title": "Subqueries: Scalar, Columnar, and Correlated Subqueries",
+    "theory": "Subqueries (inner queries) execute within outer queries. Scalar subqueries return a single value (one row, one column) and can be used in WHERE, SELECT, or HAVING. Columnar subqueries return one column with multiple rows, typically used with IN or EXISTS. Correlated subqueries reference columns from the outer query, executing once per outer row (expensive).\n\nExample: SELECT * FROM orders WHERE customer_id IN (SELECT customer_id FROM customers WHERE country = 'USA'). Performance varies: scalar subqueries can be optimized to joins; correlated subqueries should often be rewritten as joins. Subqueries improve readability by breaking complex logic into logical steps. The WHERE clause evaluates subqueries; aggregate subqueries in SELECT don't require outer query to GROUP BY the aggregate.",
+    "examples": [
+      {
+        "description": "Scalar, columnar, and correlated subqueries for various business questions:",
+        "sql": "SELECT order_id, (SELECT customer_name FROM customers WHERE customer_id = orders.customer_id) AS customer_name FROM orders; SELECT * FROM customers WHERE customer_id IN (SELECT customer_id FROM orders WHERE YEAR(order_date) = 2024); SELECT emp_id, emp_name FROM employees e WHERE salary > (SELECT AVG(salary) FROM employees WHERE department = e.department);"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Use Subqueries for Complex Filtering",
+        "difficulty": "MEDIUM",
+        "domain": "Analytics",
+        "questionText": "Find customers who placed orders in 2024. First use a scalar subquery in SELECT to show order count per customer. Then use a columnar subquery with IN to filter only those customers.",
+        "schemaSql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1, '2024-01-15'), (102, 1, '2024-02-20'), (103, 2, '2024-03-10');",
+        "solutionQuery": "SELECT customer_id, name, (SELECT COUNT(*) FROM orders WHERE orders.customer_id = customers.customer_id AND EXTRACT(YEAR FROM order_date) = 2024) AS orders_in_2024 FROM customers WHERE customer_id IN (SELECT DISTINCT customer_id FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2024);"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 8: Advanced Concepts",
+    "title": "Common Table Expressions (CTEs): Using WITH for Readable Queries",
+    "theory": "CTEs (Common Table Expressions) are temporary named result sets created with WITH. They improve query readability by breaking complex logic into named, reusable steps. Syntax: WITH cte_name AS (SELECT ...) SELECT ... FROM cte_name.\n\nRecursive CTEs (WITH RECURSIVE) handle hierarchical data: start with a base case, then union recursive steps. Example: finding all ancestors in an organizational tree. Non-recursive CTEs are optimized to inline (replacing the CTE reference with the actual query) or materialize (computing once and storing). Multiple CTEs can be chained: WITH cte1 AS (...), cte2 AS (...) SELECT ... FROM cte1 JOIN cte2. CTEs scope to the statement; they cannot be referenced in subsequent statements.",
+    "examples": [
+      {
+        "description": "Non-recursive CTE for staged calculations and recursive CTE for hierarchies:",
+        "sql": "WITH customer_orders AS (SELECT customer_id, COUNT(*) AS order_count, SUM(total_amount) AS revenue FROM orders GROUP BY customer_id) SELECT customer_id, order_count, revenue FROM customer_orders WHERE revenue > 1000 ORDER BY revenue DESC;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Simplify Complex Queries with CTEs",
+        "difficulty": "MEDIUM",
+        "domain": "Query Optimization",
+        "questionText": "Rewrite a complex query using a CTE: first calculate total revenue per customer, then filter for customers with revenue > $500 and show their name and revenue.",
+        "schemaSql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT, customer_id INT, total_amount NUMERIC(10, 2)); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1, 500), (102, 1, 600), (103, 2, 300), (104, 3, 700);",
+        "solutionQuery": "WITH customer_revenue AS (SELECT customer_id, SUM(total_amount) AS total_revenue FROM orders GROUP BY customer_id) SELECT c.customer_id, c.name, cr.total_revenue FROM customers c JOIN customer_revenue cr ON c.customer_id = cr.customer_id WHERE cr.total_revenue > 500 ORDER BY cr.total_revenue DESC;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 8: Advanced Concepts",
+    "title": "Set Operations: UNION, INTERSECT, and EXCEPT",
+    "theory": "Set operations combine results from multiple SELECT statements. UNION combines all rows, removing duplicates (UNION ALL preserves duplicates and is faster). INTERSECT returns rows present in both result sets. EXCEPT returns rows in the first set but not the second.\n\nAll result sets must have the same number of columns with compatible data types. Column names come from the first SELECT. NULL values are treated as equal in set operations. Duplicates are removed unless UNION ALL is used (INTERSECT ALL and EXCEPT ALL variants exist but are PostgreSQL-specific). Performance depends on whether indexes can optimize the underlying queries. ORDER BY applies to the final result and must reference column positions or aliases from the first SELECT.",
+    "examples": [
+      {
+        "description": "UNION, INTERSECT, and EXCEPT for finding common, unique, and combined data:",
+        "sql": "SELECT product_id, name FROM products WHERE category = 'Electronics' UNION SELECT product_id, name FROM products WHERE price > 500 ORDER BY product_id;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Combine Result Sets with Set Operations",
+        "difficulty": "MEDIUM",
+        "domain": "Data Analysis",
+        "questionText": "Find all products that are either in the 'Electronics' category OR priced above $300. Use UNION to combine the results.",
+        "schemaSql": "CREATE TABLE products (product_id INT, name VARCHAR(100), category VARCHAR(50), price NUMERIC(10, 2)); INSERT INTO products VALUES (1, 'Laptop', 'Electronics', 1200), (2, 'Mouse', 'Electronics', 30), (3, 'Sofa', 'Furniture', 800), (4, 'Chair', 'Furniture', 150);",
+        "solutionQuery": "SELECT product_id, name, category, price FROM products WHERE category = 'Electronics' UNION SELECT product_id, name, category, price FROM products WHERE price > 300 ORDER BY product_id;"
+      }
+    ]
+  },
+  {
+    "chapter": "Module 8: Advanced Concepts",
+    "title": "Case Logic: CASE WHEN (The 'If-Else' of SQL)",
+    "theory": "CASE WHEN provides conditional logic within queries. Simple CASE matches a single expression against multiple values; searched CASE evaluates multiple boolean conditions. Syntax: CASE WHEN condition THEN result ELSE default_result END.\n\nCommon uses: categorizing data (IF salary > 100000 THEN 'Senior'), data transformation, and conditional aggregation. CASE can appear in SELECT, WHERE, ORDER BY, and aggregate functions. Multiple WHEN clauses are evaluated in order; the first TRUE condition is returned. ELSE handles unmatched cases; omitting ELSE returns NULL for non-matches. Avoid deep nesting; above 4-5 WHEN clauses, consider a lookup table join for maintainability.",
+    "examples": [
+      {
+        "description": "CASE WHEN for data categorization, conditional aggregation, and dynamic ordering:",
+        "sql": "SELECT emp_id, emp_name, salary, CASE WHEN salary < 50000 THEN 'Junior' WHEN salary < 100000 THEN 'Mid-Level' WHEN salary < 150000 THEN 'Senior' ELSE 'Executive' END AS salary_band FROM employees ORDER BY CASE WHEN salary > 100000 THEN 1 ELSE 2 END, salary DESC;"
+      }
+    ],
+    "practiceTasks": [
+      {
+        "title": "Categorize Data with CASE WHEN",
+        "difficulty": "MEDIUM",
+        "domain": "Data Transformation",
+        "questionText": "Create a report showing employees with a salary band: 'Entry' for <$50k, 'Mid' for $50k-$100k, 'Senior' for $100k-$150k, and 'Executive' for >$150k. Count employees in each band.",
+        "schemaSql": "CREATE TABLE employees (emp_id INT, emp_name VARCHAR(100), salary NUMERIC(10, 2)); INSERT INTO employees VALUES (1, 'Alice', 45000), (2, 'Bob', 75000), (3, 'Charlie', 120000), (4, 'Diana', 160000), (5, 'Eve', 55000);",
+        "solutionQuery": "SELECT CASE WHEN salary < 50000 THEN 'Entry' WHEN salary < 100000 THEN 'Mid' WHEN salary < 150000 THEN 'Senior' ELSE 'Executive' END AS salary_band, COUNT(*) AS employee_count FROM employees GROUP BY CASE WHEN salary < 50000 THEN 'Entry' WHEN salary < 100000 THEN 'Mid' WHEN salary < 150000 THEN 'Senior' ELSE 'Executive' END ORDER BY salary_band;"
+      }
+    ]
+  }
+]
