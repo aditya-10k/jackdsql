@@ -9,14 +9,14 @@
         "sql": "CREATE TABLE customers (customer_id SERIAL PRIMARY KEY, name TEXT NOT NULL); CREATE TABLE orders (order_id SERIAL PRIMARY KEY, customer_id INT REFERENCES customers(customer_id), order_date DATE);"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Identify Relational Structure",
+        "question_title": "Identify Relational Structure",
         "difficulty": "EASY",
         "domain": "Data Modeling",
-        "questionText": "Given two tables: users(user_id, username) and posts(post_id, user_id, content). Explain the relational relationship and write a query to verify the relationship exists by retrieving a user and their posts.",
-        "schemaSql": "CREATE TABLE users (user_id SERIAL PRIMARY KEY, username TEXT NOT NULL); CREATE TABLE posts (post_id SERIAL PRIMARY KEY, user_id INT REFERENCES users(user_id), content TEXT); INSERT INTO users VALUES (1, 'alice'), (2, 'bob'); INSERT INTO posts VALUES (1, 1, 'Hello World'), (2, 1, 'SQL is great'), (3, 2, 'PostgreSQL rocks');",
-        "solutionQuery": "SELECT u.username, COUNT(p.post_id) AS post_count FROM users u LEFT JOIN posts p ON u.user_id = p.user_id GROUP BY u.user_id, u.username;"
+        "question_text": "Given two tables: users(user_id, username) and posts(post_id, user_id, content). Explain the relational relationship and write a query to verify the relationship exists by retrieving a user and their posts.",
+        "schema_sql": "CREATE TABLE users (user_id SERIAL PRIMARY KEY, username TEXT NOT NULL); CREATE TABLE posts (post_id SERIAL PRIMARY KEY, user_id INT REFERENCES users(user_id), content TEXT); INSERT INTO users VALUES (1, 'alice'), (2, 'bob'); INSERT INTO posts VALUES (1, 1, 'Hello World'), (2, 1, 'SQL is great'), (3, 2, 'PostgreSQL rocks');",
+        "solution_query": "SELECT u.username, COUNT(p.post_id) AS post_count FROM users u LEFT JOIN posts p ON u.user_id = p.user_id GROUP BY u.user_id, u.username;"
       }
     ]
   },
@@ -30,14 +30,14 @@
         "sql": "CREATE TABLE products (product_id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, description TEXT, price NUMERIC(10, 2) NOT NULL, stock_quantity INT DEFAULT 0, is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Choose Appropriate Data Types",
+        "question_title": "Choose Appropriate Data Types",
         "difficulty": "EASY",
         "domain": "Database Design",
-        "questionText": "Design a table for an e-commerce system that stores: product name (max 100 chars), description (unlimited), unit price (to 2 decimal places), quantity in stock, and whether it's available for purchase. Use appropriate PostgreSQL data types.",
-        "schemaSql": "CREATE TABLE products (product_id SERIAL PRIMARY KEY, name VARCHAR(100), description TEXT, unit_price NUMERIC(8, 2), quantity_in_stock INT, is_available BOOLEAN);",
-        "solutionQuery": "INSERT INTO products (name, description, unit_price, quantity_in_stock, is_available) VALUES ('Premium Laptop', 'High-performance computing device', 1299.99, 15, TRUE); SELECT name, unit_price, is_available FROM products WHERE is_available = TRUE AND quantity_in_stock > 0;"
+        "question_text": "Design a table for an e-commerce system that stores: product name (max 100 chars), description (unlimited), unit price (to 2 decimal places), quantity in stock, and whether it's available for purchase. Use appropriate PostgreSQL data types.",
+        "schema_sql": "CREATE TABLE products (product_id SERIAL PRIMARY KEY, name VARCHAR(100), description TEXT, unit_price NUMERIC(8, 2), quantity_in_stock INT, is_available BOOLEAN);",
+        "solution_query": "INSERT INTO products (name, description, unit_price, quantity_in_stock, is_available) VALUES ('Premium Laptop', 'High-performance computing device', 1299.99, 15, TRUE); SELECT name, unit_price, is_available FROM products WHERE is_available = TRUE AND quantity_in_stock > 0;"
       }
     ]
   },
@@ -51,14 +51,14 @@
         "sql": "CREATE TABLE employees (employee_id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, last_name VARCHAR(50) NOT NULL, salary NUMERIC(10, 2), hire_date DATE DEFAULT CURRENT_DATE); TRUNCATE TABLE employees; DROP TABLE IF EXISTS employees;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Schema Lifecycle Management",
+        "question_title": "Schema Lifecycle Management",
         "difficulty": "MEDIUM",
         "domain": "Database Administration",
-        "questionText": "Create a table for storing employee records with columns: employee_id (auto-incrementing primary key), first_name and last_name (required, 50 chars max), salary (2 decimal places), and hire_date (defaults to today). Then insert 3 sample records and retrieve them.",
-        "schemaSql": "CREATE TABLE employees (employee_id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, last_name VARCHAR(50) NOT NULL, salary NUMERIC(10, 2), hire_date DATE DEFAULT CURRENT_DATE);",
-        "solutionQuery": "INSERT INTO employees (first_name, last_name, salary) VALUES ('John', 'Doe', 75000.00), ('Jane', 'Smith', 82000.00), ('Bob', 'Johnson', 68000.00); SELECT employee_id, first_name, last_name, salary, hire_date FROM employees ORDER BY employee_id;"
+        "question_text": "Create a table for storing employee records with columns: employee_id (auto-incrementing primary key), first_name and last_name (required, 50 chars max), salary (2 decimal places), and hire_date (defaults to today). Then insert 3 sample records and retrieve them.",
+        "schema_sql": "CREATE TABLE employees (employee_id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, last_name VARCHAR(50) NOT NULL, salary NUMERIC(10, 2), hire_date DATE DEFAULT CURRENT_DATE);",
+        "solution_query": "INSERT INTO employees (first_name, last_name, salary) VALUES ('John', 'Doe', 75000.00), ('Jane', 'Smith', 82000.00), ('Bob', 'Johnson', 68000.00); SELECT employee_id, first_name, last_name, salary, hire_date FROM employees ORDER BY employee_id;"
       }
     ]
   },
@@ -72,14 +72,14 @@
         "sql": "CREATE TABLE users (user_id SERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL UNIQUE, username VARCHAR(50) NOT NULL UNIQUE, registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, is_verified BOOLEAN DEFAULT FALSE);"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Enforce Data Integrity with Constraints",
+        "question_title": "Enforce Data Integrity with Constraints",
         "difficulty": "MEDIUM",
         "domain": "Data Validation",
-        "questionText": "Create a table for a social media platform storing users. Each user must have a unique email and username (both required). Track registration date (defaults to now) and verification status (defaults to false). Attempt to insert duplicate emails and observe the constraint violation.",
-        "schemaSql": "CREATE TABLE users (user_id SERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL UNIQUE, username VARCHAR(50) NOT NULL UNIQUE, registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, is_verified BOOLEAN DEFAULT FALSE);",
-        "solutionQuery": "INSERT INTO users (email, username) VALUES ('alice@example.com', 'alice'); INSERT INTO users (email, username) VALUES ('bob@example.com', 'bob'); SELECT user_id, email, username, registration_date, is_verified FROM users WHERE is_verified = FALSE;"
+        "question_text": "Create a table for a social media platform storing users. Each user must have a unique email and username (both required). Track registration date (defaults to now) and verification status (defaults to false). Attempt to insert duplicate emails and observe the constraint violation.",
+        "schema_sql": "CREATE TABLE users (user_id SERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL UNIQUE, username VARCHAR(50) NOT NULL UNIQUE, registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, is_verified BOOLEAN DEFAULT FALSE);",
+        "solution_query": "INSERT INTO users (email, username) VALUES ('alice@example.com', 'alice'); INSERT INTO users (email, username) VALUES ('bob@example.com', 'bob'); SELECT user_id, email, username, registration_date, is_verified FROM users WHERE is_verified = FALSE;"
       }
     ]
   },
@@ -93,14 +93,14 @@
         "sql": "CREATE TABLE departments (dept_id SERIAL PRIMARY KEY, dept_name VARCHAR(100) NOT NULL); CREATE TABLE employees (emp_id SERIAL PRIMARY KEY, emp_name VARCHAR(100) NOT NULL, dept_id INT NOT NULL REFERENCES departments(dept_id) ON DELETE CASCADE);"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Design Relational Structure with Keys",
+        "question_title": "Design Relational Structure with Keys",
         "difficulty": "MEDIUM",
         "domain": "Database Design",
-        "questionText": "Create two tables: departments (dept_id, dept_name) and employees (emp_id, emp_name, dept_id). Set up a foreign key relationship so deleting a department automatically removes its employees. Insert sample data and verify the relationship.",
-        "schemaSql": "CREATE TABLE departments (dept_id SERIAL PRIMARY KEY, dept_name VARCHAR(100) NOT NULL); CREATE TABLE employees (emp_id SERIAL PRIMARY KEY, emp_name VARCHAR(100) NOT NULL, dept_id INT NOT NULL REFERENCES departments(dept_id) ON DELETE CASCADE);",
-        "solutionQuery": "INSERT INTO departments (dept_name) VALUES ('Engineering'), ('Sales'); INSERT INTO employees (emp_name, dept_id) VALUES ('Alice', 1), ('Bob', 1), ('Charlie', 2); SELECT e.emp_name, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id ORDER BY d.dept_name;"
+        "question_text": "Create two tables: departments (dept_id, dept_name) and employees (emp_id, emp_name, dept_id). Set up a foreign key relationship so deleting a department automatically removes its employees. Insert sample data and verify the relationship.",
+        "schema_sql": "CREATE TABLE departments (dept_id SERIAL PRIMARY KEY, dept_name VARCHAR(100) NOT NULL); CREATE TABLE employees (emp_id SERIAL PRIMARY KEY, emp_name VARCHAR(100) NOT NULL, dept_id INT NOT NULL REFERENCES departments(dept_id) ON DELETE CASCADE);",
+        "solution_query": "INSERT INTO departments (dept_name) VALUES ('Engineering'), ('Sales'); INSERT INTO employees (emp_name, dept_id) VALUES ('Alice', 1), ('Bob', 1), ('Charlie', 2); SELECT e.emp_name, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id ORDER BY d.dept_name;"
       }
     ]
   },
@@ -114,14 +114,14 @@
         "sql": "SELECT product_name, unit_price * 1.18 AS price_with_tax FROM products;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Renaming for Clarity",
+        "question_title": "Renaming for Clarity",
         "difficulty": "EASY",
         "domain": "Retail",
-        "questionText": "The marketing team needs a list of all products. Retrieve the 'name' column but alias it as 'Product_Identity' so it fits their reporting template.",
-        "schemaSql": "CREATE TABLE products (name TEXT, price INT); INSERT INTO products VALUES ('Laptop', 1000), ('Mouse', 25);",
-        "solutionQuery": "SELECT name AS \"Product_Identity\" FROM products;"
+        "question_text": "The marketing team needs a list of all products. Retrieve the 'name' column but alias it as 'Product_Identity' so it fits their reporting template.",
+        "schema_sql": "CREATE TABLE products (name TEXT, price INT); INSERT INTO products VALUES ('Laptop', 1000), ('Mouse', 25);",
+        "solution_query": "SELECT name AS \"Product_Identity\" FROM products;"
       }
     ]
   },
@@ -135,14 +135,14 @@
         "sql": "SELECT emp_id, first_name || ' ' || last_name AS full_name, salary * 1.15 AS salary_after_raise, CAST(salary * 0.12 AS NUMERIC(10, 2)) AS annual_bonus FROM employees e WHERE e.salary > 50000;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Calculated Fields and Concatenation",
+        "question_title": "Calculated Fields and Concatenation",
         "difficulty": "EASY",
         "domain": "Business Intelligence",
-        "questionText": "Create a report showing employee ID, full name (concatenated from first and last name), monthly salary (annual salary divided by 12), and an identifier combining department code and last name. Use appropriate aliases.",
-        "schemaSql": "CREATE TABLE employees (emp_id INT, first_name VARCHAR(50), last_name VARCHAR(50), annual_salary NUMERIC(10, 2), dept_code VARCHAR(10)); INSERT INTO employees VALUES (1, 'John', 'Doe', 60000, 'ENG'), (2, 'Jane', 'Smith', 72000, 'SAL');",
-        "solutionQuery": "SELECT emp_id, first_name || ' ' || last_name AS full_name, annual_salary / 12 AS monthly_salary, dept_code || '-' || last_name AS dept_employee_id FROM employees;"
+        "question_text": "Create a report showing employee ID, full name (concatenated from first and last name), monthly salary (annual salary divided by 12), and an identifier combining department code and last name. Use appropriate aliases.",
+        "schema_sql": "CREATE TABLE employees (emp_id INT, first_name VARCHAR(50), last_name VARCHAR(50), annual_salary NUMERIC(10, 2), dept_code VARCHAR(10)); INSERT INTO employees VALUES (1, 'John', 'Doe', 60000, 'ENG'), (2, 'Jane', 'Smith', 72000, 'SAL');",
+        "solution_query": "SELECT emp_id, first_name || ' ' || last_name AS full_name, annual_salary / 12 AS monthly_salary, dept_code || '-' || last_name AS dept_employee_id FROM employees;"
       }
     ]
   },
@@ -156,14 +156,14 @@
         "sql": "SELECT DISTINCT country, city FROM customers ORDER BY country, city;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Identify Unique Values",
+        "question_title": "Identify Unique Values",
         "difficulty": "EASY",
         "domain": "Data Analysis",
-        "questionText": "A customers table has fields: customer_id, country, and city. Some customers are from the same cities. Find all unique country-city combinations and order them alphabetically.",
-        "schemaSql": "CREATE TABLE customers (customer_id INT, country VARCHAR(50), city VARCHAR(50)); INSERT INTO customers VALUES (1, 'USA', 'New York'), (2, 'USA', 'Los Angeles'), (3, 'USA', 'New York'), (4, 'Canada', 'Toronto'), (5, 'Canada', 'Toronto');",
-        "solutionQuery": "SELECT DISTINCT country, city FROM customers ORDER BY country, city;"
+        "question_text": "A customers table has fields: customer_id, country, and city. Some customers are from the same cities. Find all unique country-city combinations and order them alphabetically.",
+        "schema_sql": "CREATE TABLE customers (customer_id INT, country VARCHAR(50), city VARCHAR(50)); INSERT INTO customers VALUES (1, 'USA', 'New York'), (2, 'USA', 'Los Angeles'), (3, 'USA', 'New York'), (4, 'Canada', 'Toronto'), (5, 'Canada', 'Toronto');",
+        "solution_query": "SELECT DISTINCT country, city FROM customers ORDER BY country, city;"
       }
     ]
   },
@@ -177,14 +177,14 @@
         "sql": "SELECT order_id, customer_id, order_date, total_amount FROM orders WHERE order_date >= '2024-01-01' AND total_amount > 100 AND status <> 'cancelled';"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Filter with Multiple Conditions",
+        "question_title": "Filter with Multiple Conditions",
         "difficulty": "EASY",
         "domain": "E-Commerce",
-        "questionText": "From an orders table, retrieve orders placed in 2024 with a total amount greater than $500 that were not cancelled. Show order_id, customer_id, and total_amount.",
-        "schemaSql": "CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE, total_amount NUMERIC(10, 2), status VARCHAR(50)); INSERT INTO orders VALUES (1, 101, '2024-01-15', 750.00, 'completed'), (2, 102, '2024-02-20', 450.00, 'completed'), (3, 103, '2024-03-10', 600.00, 'cancelled'), (4, 104, '2024-04-05', 550.00, 'completed');",
-        "solutionQuery": "SELECT order_id, customer_id, total_amount FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2024 AND total_amount > 500 AND status <> 'cancelled';"
+        "question_text": "From an orders table, retrieve orders placed in 2024 with a total amount greater than $500 that were not cancelled. Show order_id, customer_id, and total_amount.",
+        "schema_sql": "CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE, total_amount NUMERIC(10, 2), status VARCHAR(50)); INSERT INTO orders VALUES (1, 101, '2024-01-15', 750.00, 'completed'), (2, 102, '2024-02-20', 450.00, 'completed'), (3, 103, '2024-03-10', 600.00, 'cancelled'), (4, 104, '2024-04-05', 550.00, 'completed');",
+        "solution_query": "SELECT order_id, customer_id, total_amount FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2024 AND total_amount > 500 AND status <> 'cancelled';"
       }
     ]
   },
@@ -198,14 +198,14 @@
         "sql": "SELECT product_id, name, price FROM products WHERE (category = 'Electronics' OR category = 'Accessories') AND price BETWEEN 100 AND 1000 AND NOT is_discontinued;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Complex Filtering Logic",
+        "question_title": "Complex Filtering Logic",
         "difficulty": "MEDIUM",
         "domain": "Inventory Management",
-        "questionText": "Find products that are either in 'Electronics' or 'Home & Garden' categories, priced between $50 and $500, and are currently active (not discontinued). Exclude any products with zero stock.",
-        "schemaSql": "CREATE TABLE products (product_id INT, name VARCHAR(100), category VARCHAR(50), price NUMERIC(10, 2), stock INT, is_discontinued BOOLEAN); INSERT INTO products VALUES (1, 'Laptop', 'Electronics', 1200, 5, FALSE), (2, 'Chair', 'Home & Garden', 150, 0, FALSE), (3, 'Monitor', 'Electronics', 300, 8, FALSE), (4, 'Old Product', 'Electronics', 200, 3, TRUE);",
-        "solutionQuery": "SELECT product_id, name, category, price, stock FROM products WHERE (category = 'Electronics' OR category = 'Home & Garden') AND price BETWEEN 50 AND 500 AND NOT is_discontinued AND stock > 0;"
+        "question_text": "Find products that are either in 'Electronics' or 'Home & Garden' categories, priced between $50 and $500, and are currently active (not discontinued). Exclude any products with zero stock.",
+        "schema_sql": "CREATE TABLE products (product_id INT, name VARCHAR(100), category VARCHAR(50), price NUMERIC(10, 2), stock INT, is_discontinued BOOLEAN); INSERT INTO products VALUES (1, 'Laptop', 'Electronics', 1200, 5, FALSE), (2, 'Chair', 'Home & Garden', 150, 0, FALSE), (3, 'Monitor', 'Electronics', 300, 8, FALSE), (4, 'Old Product', 'Electronics', 200, 3, TRUE);",
+        "solution_query": "SELECT product_id, name, category, price, stock FROM products WHERE (category = 'Electronics' OR category = 'Home & Garden') AND price BETWEEN 50 AND 500 AND NOT is_discontinued AND stock > 0;"
       }
     ]
   },
@@ -219,14 +219,14 @@
         "sql": "SELECT customer_id, name, phone, COALESCE(phone, 'No phone number') AS contact_phone FROM customers WHERE phone IS NULL OR phone IS NOT NULL;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Handle Missing Data Correctly",
+        "question_title": "Handle Missing Data Correctly",
         "difficulty": "MEDIUM",
         "domain": "Data Quality",
-        "questionText": "From a customers table, find all customers with missing phone numbers (NULL values). Also retrieve customers with phone numbers, and display a user-friendly phone field showing 'Not provided' for NULL values.",
-        "schemaSql": "CREATE TABLE customers (customer_id INT, name VARCHAR(100), phone VARCHAR(20)); INSERT INTO customers VALUES (1, 'Alice', '555-1234'), (2, 'Bob', NULL), (3, 'Charlie', '555-5678'), (4, 'Diana', NULL);",
-        "solutionQuery": "SELECT customer_id, name, COALESCE(phone, 'Not provided') AS phone_display FROM customers WHERE phone IS NULL; SELECT customer_id, name, phone FROM customers WHERE phone IS NOT NULL;"
+        "question_text": "From a customers table, find all customers with missing phone numbers (NULL values). Also retrieve customers with phone numbers, and display a user-friendly phone field showing 'Not provided' for NULL values.",
+        "schema_sql": "CREATE TABLE customers (customer_id INT, name VARCHAR(100), phone VARCHAR(20)); INSERT INTO customers VALUES (1, 'Alice', '555-1234'), (2, 'Bob', NULL), (3, 'Charlie', '555-5678'), (4, 'Diana', NULL);",
+        "solution_query": "SELECT customer_id, name, COALESCE(phone, 'Not provided') AS phone_display FROM customers WHERE phone IS NULL; SELECT customer_id, name, phone FROM customers WHERE phone IS NOT NULL;"
       }
     ]
   },
@@ -240,14 +240,14 @@
         "sql": "SELECT user_id, email FROM users WHERE email LIKE '%@%.%'; SELECT product_id, name FROM products WHERE name ILIKE '%laptop%' ORDER BY name;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Search Products by Name Pattern",
+        "question_title": "Search Products by Name Pattern",
         "difficulty": "EASY",
         "domain": "Search Functionality",
-        "questionText": "Find all products whose names contain 'pro' (case-insensitive). Also find products that start with 'Premium' and have exactly 5 characters after that (using the underscore wildcard).",
-        "schemaSql": "CREATE TABLE products (product_id INT, name VARCHAR(100)); INSERT INTO products VALUES (1, 'Professional Camera'), (2, 'Pro Microphone'), (3, 'Premium Laptop'), (4, 'Premium Monitor'), (5, 'budget phone');",
-        "solutionQuery": "SELECT product_id, name FROM products WHERE name ILIKE '%pro%' ORDER BY name; SELECT product_id, name FROM products WHERE name LIKE 'Premium_____';"
+        "question_text": "Find all products whose names contain 'pro' (case-insensitive). Also find products that start with 'Premium' and have exactly 5 characters after that (using the underscore wildcard).",
+        "schema_sql": "CREATE TABLE products (product_id INT, name VARCHAR(100)); INSERT INTO products VALUES (1, 'Professional Camera'), (2, 'Pro Microphone'), (3, 'Premium Laptop'), (4, 'Premium Monitor'), (5, 'budget phone');",
+        "solution_query": "SELECT product_id, name FROM products WHERE name ILIKE '%pro%' ORDER BY name; SELECT product_id, name FROM products WHERE name LIKE 'Premium_____';"
       }
     ]
   },
@@ -261,14 +261,14 @@
         "sql": "SELECT order_id, customer_id, order_date, status FROM orders WHERE order_date BETWEEN '2024-01-01' AND '2024-12-31' AND status IN ('completed', 'processing', 'pending');"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Filter by Range and Category",
+        "question_title": "Filter by Range and Category",
         "difficulty": "EASY",
         "domain": "Analytics",
-        "questionText": "Find all orders placed in Q1 2024 (January 1 to March 31) with status 'completed' or 'pending'. Show order_id, customer_id, order_date, and status.",
-        "schemaSql": "CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE, status VARCHAR(50)); INSERT INTO orders VALUES (1, 101, '2024-01-15', 'completed'), (2, 102, '2024-02-20', 'pending'), (3, 103, '2024-04-10', 'completed'), (4, 104, '2024-03-05', 'cancelled');",
-        "solutionQuery": "SELECT order_id, customer_id, order_date, status FROM orders WHERE order_date BETWEEN '2024-01-01' AND '2024-03-31' AND status IN ('completed', 'pending');"
+        "question_text": "Find all orders placed in Q1 2024 (January 1 to March 31) with status 'completed' or 'pending'. Show order_id, customer_id, order_date, and status.",
+        "schema_sql": "CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE, status VARCHAR(50)); INSERT INTO orders VALUES (1, 101, '2024-01-15', 'completed'), (2, 102, '2024-02-20', 'pending'), (3, 103, '2024-04-10', 'completed'), (4, 104, '2024-03-05', 'cancelled');",
+        "solution_query": "SELECT order_id, customer_id, order_date, status FROM orders WHERE order_date BETWEEN '2024-01-01' AND '2024-03-31' AND status IN ('completed', 'pending');"
       }
     ]
   },
@@ -282,14 +282,14 @@
         "sql": "SELECT product_id, category, price, stock FROM products ORDER BY category ASC, price DESC NULLS LAST LIMIT 50;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Sorted Result Sets for Reporting",
+        "question_title": "Sorted Result Sets for Reporting",
         "difficulty": "EASY",
         "domain": "Reporting",
-        "questionText": "Create a product report sorted first by category (A-Z), then by price (highest to lowest). Show product_id, category, and price. Limit to the top 20 results.",
-        "schemaSql": "CREATE TABLE products (product_id INT, category VARCHAR(50), price NUMERIC(10, 2)); INSERT INTO products VALUES (1, 'Electronics', 999), (2, 'Electronics', 199), (3, 'Home', 49.99), (4, 'Home', 79.99), (5, 'Sports', 150);",
-        "solutionQuery": "SELECT product_id, category, price FROM products ORDER BY category ASC, price DESC LIMIT 20;"
+        "question_text": "Create a product report sorted first by category (A-Z), then by price (highest to lowest). Show product_id, category, and price. Limit to the top 20 results.",
+        "schema_sql": "CREATE TABLE products (product_id INT, category VARCHAR(50), price NUMERIC(10, 2)); INSERT INTO products VALUES (1, 'Electronics', 999), (2, 'Electronics', 199), (3, 'Home', 49.99), (4, 'Home', 79.99), (5, 'Sports', 150);",
+        "solution_query": "SELECT product_id, category, price FROM products ORDER BY category ASC, price DESC LIMIT 20;"
       }
     ]
   },
@@ -303,14 +303,14 @@
         "sql": "SELECT customer_id, name, email FROM customers ORDER BY customer_id ASC LIMIT 25 OFFSET 50;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Implement API Pagination",
+        "question_title": "Implement API Pagination",
         "difficulty": "MEDIUM",
         "domain": "API Development",
-        "questionText": "Implement pagination for a customer API that returns 10 customers per page. Retrieve page 3 (customers 21-30) when customers are sorted by ID in ascending order.",
-        "schemaSql": "CREATE TABLE customers (customer_id SERIAL PRIMARY KEY, name VARCHAR(100), email VARCHAR(100)); INSERT INTO customers (name, email) SELECT 'Customer' || i, 'customer' || i || '@example.com' FROM generate_series(1, 50) i;",
-        "solutionQuery": "SELECT customer_id, name, email FROM customers ORDER BY customer_id ASC LIMIT 10 OFFSET 20;"
+        "question_text": "Implement pagination for a customer API that returns 10 customers per page. Retrieve page 3 (customers 21-30) when customers are sorted by ID in ascending order.",
+        "schema_sql": "CREATE TABLE customers (customer_id SERIAL PRIMARY KEY, name VARCHAR(100), email VARCHAR(100)); INSERT INTO customers (name, email) SELECT 'Customer' || i, 'customer' || i || '@example.com' FROM generate_series(1, 50) i;",
+        "solution_query": "SELECT customer_id, name, email FROM customers ORDER BY customer_id ASC LIMIT 10 OFFSET 20;"
       }
     ]
   },
@@ -324,14 +324,14 @@
         "sql": "INSERT INTO products (name, price) VALUES ('Laptop', 1299.99); INSERT INTO products (name, price) VALUES ('Mouse', 25.99), ('Keyboard', 79.99), ('Monitor', 399.99); INSERT INTO product_archive SELECT * FROM products WHERE discontinued = TRUE;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Populate Table with Multiple Insert Strategies",
+        "question_title": "Populate Table with Multiple Insert Strategies",
         "difficulty": "MEDIUM",
         "domain": "Data Loading",
-        "questionText": "Create a products table and insert a single laptop product. Then bulk insert 3 more products (mouse, keyboard, monitor). Finally, use INSERT...SELECT to copy all products into an archive table.",
-        "schemaSql": "CREATE TABLE products (product_id SERIAL PRIMARY KEY, name VARCHAR(100), price NUMERIC(10, 2)); CREATE TABLE product_archive AS SELECT * FROM products WHERE FALSE;",
-        "solutionQuery": "INSERT INTO products (name, price) VALUES ('Laptop', 1299.99); INSERT INTO products (name, price) VALUES ('Mouse', 25.99), ('Keyboard', 79.99), ('Monitor', 399.99); INSERT INTO product_archive SELECT * FROM products; SELECT * FROM product_archive;"
+        "question_text": "Create a products table and insert a single laptop product. Then bulk insert 3 more products (mouse, keyboard, monitor). Finally, use INSERT...SELECT to copy all products into an archive table.",
+        "schema_sql": "CREATE TABLE products (product_id SERIAL PRIMARY KEY, name VARCHAR(100), price NUMERIC(10, 2)); CREATE TABLE product_archive AS SELECT * FROM products WHERE FALSE;",
+        "solution_query": "INSERT INTO products (name, price) VALUES ('Laptop', 1299.99); INSERT INTO products (name, price) VALUES ('Mouse', 25.99), ('Keyboard', 79.99), ('Monitor', 399.99); INSERT INTO product_archive SELECT * FROM products; SELECT * FROM product_archive;"
       }
     ]
   },
@@ -345,14 +345,14 @@
         "sql": "SELECT * FROM employees WHERE department_id = 5; UPDATE employees SET salary = salary * 1.1, last_review_date = CURRENT_DATE WHERE department_id = 5 AND years_employed > 3;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Safe Update Operations",
+        "question_title": "Safe Update Operations",
         "difficulty": "MEDIUM",
         "domain": "Data Maintenance",
-        "questionText": "Update employee salaries: give a 5% raise to all employees in department 3 who have been with the company for more than 2 years. First, verify the affected records with SELECT, then perform the update.",
-        "schemaSql": "CREATE TABLE employees (emp_id INT, name VARCHAR(100), dept_id INT, salary NUMERIC(10, 2), hire_date DATE); INSERT INTO employees VALUES (1, 'Alice', 3, 60000, '2021-06-15'), (2, 'Bob', 3, 55000, '2019-01-10'), (3, 'Charlie', 2, 65000, '2022-03-20');",
-        "solutionQuery": "SELECT emp_id, name, salary FROM employees WHERE dept_id = 3 AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, hire_date)) > 2; UPDATE employees SET salary = salary * 1.05 WHERE dept_id = 3 AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, hire_date)) > 2;"
+        "question_text": "Update employee salaries: give a 5% raise to all employees in department 3 who have been with the company for more than 2 years. First, verify the affected records with SELECT, then perform the update.",
+        "schema_sql": "CREATE TABLE employees (emp_id INT, name VARCHAR(100), dept_id INT, salary NUMERIC(10, 2), hire_date DATE); INSERT INTO employees VALUES (1, 'Alice', 3, 60000, '2021-06-15'), (2, 'Bob', 3, 55000, '2019-01-10'), (3, 'Charlie', 2, 65000, '2022-03-20');",
+        "solution_query": "SELECT emp_id, name, salary FROM employees WHERE dept_id = 3 AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, hire_date)) > 2; UPDATE employees SET salary = salary * 1.05 WHERE dept_id = 3 AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, hire_date)) > 2;"
       }
     ]
   },
@@ -366,14 +366,14 @@
         "sql": "DELETE FROM orders WHERE order_date < '2020-01-01' AND status = 'cancelled'; DELETE FROM customers WHERE customer_id = 42;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Safe Deletion with Verification",
+        "question_title": "Safe Deletion with Verification",
         "difficulty": "MEDIUM",
         "domain": "Data Cleanup",
-        "questionText": "Delete all cancelled orders from 2023. First, verify which orders will be deleted using SELECT with the same WHERE condition. Then execute the DELETE.",
-        "schemaSql": "CREATE TABLE orders (order_id INT, order_date DATE, status VARCHAR(50), total NUMERIC(10, 2)); INSERT INTO orders VALUES (1, '2023-01-15', 'cancelled', 100), (2, '2023-06-20', 'completed', 200), (3, '2023-12-30', 'cancelled', 150);",
-        "solutionQuery": "SELECT order_id, order_date, status FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2023 AND status = 'cancelled'; DELETE FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2023 AND status = 'cancelled';"
+        "question_text": "Delete all cancelled orders from 2023. First, verify which orders will be deleted using SELECT with the same WHERE condition. Then execute the DELETE.",
+        "schema_sql": "CREATE TABLE orders (order_id INT, order_date DATE, status VARCHAR(50), total NUMERIC(10, 2)); INSERT INTO orders VALUES (1, '2023-01-15', 'cancelled', 100), (2, '2023-06-20', 'completed', 200), (3, '2023-12-30', 'cancelled', 150);",
+        "solution_query": "SELECT order_id, order_date, status FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2023 AND status = 'cancelled'; DELETE FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2023 AND status = 'cancelled';"
       }
     ]
   },
@@ -387,14 +387,14 @@
         "sql": "SELECT COUNT(*) AS total_orders, COUNT(DISTINCT customer_id) AS unique_customers, SUM(total_amount) AS revenue, AVG(total_amount) AS avg_order_value, MIN(total_amount) AS min_order, MAX(total_amount) AS max_order FROM orders WHERE order_date BETWEEN '2024-01-01' AND '2024-12-31';"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Sales Metrics Calculation",
+        "question_title": "Sales Metrics Calculation",
         "difficulty": "MEDIUM",
         "domain": "Analytics",
-        "questionText": "Analyze 2024 sales: calculate total orders, unique customers, total revenue, average order value, and the highest single order amount.",
-        "schemaSql": "CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE, total_amount NUMERIC(10, 2)); INSERT INTO orders VALUES (1, 101, '2024-01-10', 500), (2, 102, '2024-02-15', 750), (3, 101, '2024-03-20', 600), (4, 103, '2024-04-25', 1200);",
-        "solutionQuery": "SELECT COUNT(*) AS total_orders, COUNT(DISTINCT customer_id) AS unique_customers, SUM(total_amount) AS total_revenue, AVG(total_amount) AS avg_order_value, MAX(total_amount) AS highest_order FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2024;"
+        "question_text": "Analyze 2024 sales: calculate total orders, unique customers, total revenue, average order value, and the highest single order amount.",
+        "schema_sql": "CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE, total_amount NUMERIC(10, 2)); INSERT INTO orders VALUES (1, 101, '2024-01-10', 500), (2, 102, '2024-02-15', 750), (3, 101, '2024-03-20', 600), (4, 103, '2024-04-25', 1200);",
+        "solution_query": "SELECT COUNT(*) AS total_orders, COUNT(DISTINCT customer_id) AS unique_customers, SUM(total_amount) AS total_revenue, AVG(total_amount) AS avg_order_value, MAX(total_amount) AS highest_order FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2024;"
       }
     ]
   },
@@ -408,14 +408,14 @@
         "sql": "SELECT department, EXTRACT(YEAR FROM order_date) AS year, EXTRACT(MONTH FROM order_date) AS month, COUNT(*) AS order_count, SUM(total_amount) AS revenue FROM orders GROUP BY department, EXTRACT(YEAR FROM order_date), EXTRACT(MONTH FROM order_date) ORDER BY department, year, month;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Group and Aggregate Complex Data",
+        "question_title": "Group and Aggregate Complex Data",
         "difficulty": "MEDIUM",
         "domain": "Business Intelligence",
-        "questionText": "Group orders by customer and calculate: order count, total revenue, and average order value per customer. Order results by total revenue descending.",
-        "schemaSql": "CREATE TABLE orders (order_id INT, customer_id INT, customer_name VARCHAR(100), total_amount NUMERIC(10, 2)); INSERT INTO orders VALUES (1, 101, 'Alice', 500), (2, 101, 'Alice', 600), (3, 102, 'Bob', 750), (4, 102, 'Bob', 400), (5, 103, 'Charlie', 1200);",
-        "solutionQuery": "SELECT customer_id, customer_name, COUNT(*) AS order_count, SUM(total_amount) AS total_revenue, AVG(total_amount) AS avg_order_value FROM orders GROUP BY customer_id, customer_name ORDER BY total_revenue DESC;"
+        "question_text": "Group orders by customer and calculate: order count, total revenue, and average order value per customer. Order results by total revenue descending.",
+        "schema_sql": "CREATE TABLE orders (order_id INT, customer_id INT, customer_name VARCHAR(100), total_amount NUMERIC(10, 2)); INSERT INTO orders VALUES (1, 101, 'Alice', 500), (2, 101, 'Alice', 600), (3, 102, 'Bob', 750), (4, 102, 'Bob', 400), (5, 103, 'Charlie', 1200);",
+        "solution_query": "SELECT customer_id, customer_name, COUNT(*) AS order_count, SUM(total_amount) AS total_revenue, AVG(total_amount) AS avg_order_value FROM orders GROUP BY customer_id, customer_name ORDER BY total_revenue DESC;"
       }
     ]
   },
@@ -429,14 +429,14 @@
         "sql": "SELECT category, COUNT(*) AS product_count, AVG(price) AS avg_price FROM products WHERE is_active = TRUE GROUP BY category HAVING COUNT(*) >= 5 AND AVG(price) > 100 ORDER BY avg_price DESC;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Filter Groups After Aggregation",
+        "question_title": "Filter Groups After Aggregation",
         "difficulty": "MEDIUM",
         "domain": "Analytics",
-        "questionText": "Find product categories with at least 5 active products where the average price exceeds $100. Show category, product count, and average price.",
-        "schemaSql": "CREATE TABLE products (product_id INT, category VARCHAR(50), price NUMERIC(10, 2), is_active BOOLEAN); INSERT INTO products VALUES (1, 'Electronics', 500, TRUE), (2, 'Electronics', 600, TRUE), (3, 'Electronics', 700, TRUE), (4, 'Electronics', 400, TRUE), (5, 'Electronics', 550, TRUE), (6, 'Home', 150, TRUE), (7, 'Home', 200, TRUE), (8, 'Home', 80, TRUE);",
-        "solutionQuery": "SELECT category, COUNT(*) AS product_count, AVG(price) AS avg_price FROM products WHERE is_active = TRUE GROUP BY category HAVING COUNT(*) >= 5 AND AVG(price) > 100 ORDER BY avg_price DESC;"
+        "question_text": "Find product categories with at least 5 active products where the average price exceeds $100. Show category, product count, and average price.",
+        "schema_sql": "CREATE TABLE products (product_id INT, category VARCHAR(50), price NUMERIC(10, 2), is_active BOOLEAN); INSERT INTO products VALUES (1, 'Electronics', 500, TRUE), (2, 'Electronics', 600, TRUE), (3, 'Electronics', 700, TRUE), (4, 'Electronics', 400, TRUE), (5, 'Electronics', 550, TRUE), (6, 'Home', 150, TRUE), (7, 'Home', 200, TRUE), (8, 'Home', 80, TRUE);",
+        "solution_query": "SELECT category, COUNT(*) AS product_count, AVG(price) AS avg_price FROM products WHERE is_active = TRUE GROUP BY category HAVING COUNT(*) >= 5 AND AVG(price) > 100 ORDER BY avg_price DESC;"
       }
     ]
   },
@@ -450,14 +450,14 @@
         "sql": "SELECT c.customer_id, c.name, o.order_id, oi.product_id, oi.quantity FROM customers c INNER JOIN orders o ON c.customer_id = o.customer_id INNER JOIN order_items oi ON o.order_id = oi.order_id;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Join Customer and Order Data",
+        "question_title": "Join Customer and Order Data",
         "difficulty": "MEDIUM",
         "domain": "Data Integration",
-        "questionText": "Create customers and orders tables. Find all orders placed by customers, showing customer name, order ID, and order date. Use an INNER JOIN.",
-        "schemaSql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT PRIMARY KEY, customer_id INT, order_date DATE); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1, '2024-01-15'), (102, 1, '2024-02-20'), (103, 2, '2024-03-10');",
-        "solutionQuery": "SELECT c.customer_id, c.name, o.order_id, o.order_date FROM customers c INNER JOIN orders o ON c.customer_id = o.customer_id ORDER BY c.customer_id, o.order_date;"
+        "question_text": "Create customers and orders tables. Find all orders placed by customers, showing customer name, order ID, and order date. Use an INNER JOIN.",
+        "schema_sql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT PRIMARY KEY, customer_id INT, order_date DATE); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1, '2024-01-15'), (102, 1, '2024-02-20'), (103, 2, '2024-03-10');",
+        "solution_query": "SELECT c.customer_id, c.name, o.order_id, o.order_date FROM customers c INNER JOIN orders o ON c.customer_id = o.customer_id ORDER BY c.customer_id, o.order_date;"
       }
     ]
   },
@@ -471,14 +471,14 @@
         "sql": "SELECT c.customer_id, c.name, COUNT(o.order_id) AS order_count FROM customers c LEFT JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id, c.name HAVING COUNT(o.order_id) = 0;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Find Unmatched Records",
+        "question_title": "Find Unmatched Records",
         "difficulty": "MEDIUM",
         "domain": "Data Reconciliation",
-        "questionText": "Find all customers who have NOT placed any orders. Use a LEFT JOIN and WHERE clause to identify orphans.",
-        "schemaSql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT PRIMARY KEY, customer_id INT); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1), (102, 1), (103, 2);",
-        "solutionQuery": "SELECT c.customer_id, c.name FROM customers c LEFT JOIN orders o ON c.customer_id = o.customer_id WHERE o.order_id IS NULL;"
+        "question_text": "Find all customers who have NOT placed any orders. Use a LEFT JOIN and WHERE clause to identify orphans.",
+        "schema_sql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT PRIMARY KEY, customer_id INT); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1), (102, 1), (103, 2);",
+        "solution_query": "SELECT c.customer_id, c.name FROM customers c LEFT JOIN orders o ON c.customer_id = o.customer_id WHERE o.order_id IS NULL;"
       }
     ]
   },
@@ -492,14 +492,14 @@
         "sql": "SELECT e.emp_id, e.emp_name, e.manager_id, m.emp_name AS manager_name FROM employees e LEFT JOIN employees m ON e.manager_id = m.emp_id;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Build Organizational Chart",
+        "question_title": "Build Organizational Chart",
         "difficulty": "MEDIUM",
         "domain": "HR Analytics",
-        "questionText": "Create an employees table where each employee has a manager_id pointing to another employee. Use a self-join to display each employee with their manager's name.",
-        "schemaSql": "CREATE TABLE employees (emp_id INT PRIMARY KEY, emp_name VARCHAR(100), manager_id INT REFERENCES employees(emp_id)); INSERT INTO employees VALUES (1, 'CEO', NULL), (2, 'VP Engineering', 1), (3, 'VP Sales', 1), (4, 'Engineer A', 2), (5, 'Engineer B', 2);",
-        "solutionQuery": "SELECT e.emp_id, e.emp_name, COALESCE(m.emp_name, 'No Manager') AS manager_name FROM employees e LEFT JOIN employees m ON e.manager_id = m.emp_id ORDER BY e.emp_id;"
+        "question_text": "Create an employees table where each employee has a manager_id pointing to another employee. Use a self-join to display each employee with their manager's name.",
+        "schema_sql": "CREATE TABLE employees (emp_id INT PRIMARY KEY, emp_name VARCHAR(100), manager_id INT REFERENCES employees(emp_id)); INSERT INTO employees VALUES (1, 'CEO', NULL), (2, 'VP Engineering', 1), (3, 'VP Sales', 1), (4, 'Engineer A', 2), (5, 'Engineer B', 2);",
+        "solution_query": "SELECT e.emp_id, e.emp_name, COALESCE(m.emp_name, 'No Manager') AS manager_name FROM employees e LEFT JOIN employees m ON e.manager_id = m.emp_id ORDER BY e.emp_id;"
       }
     ]
   },
@@ -513,14 +513,14 @@
         "sql": "SELECT s.size, c.color FROM sizes s CROSS JOIN colors c ORDER BY s.size, c.color;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Generate Combinations with Cross Join",
+        "question_title": "Generate Combinations with Cross Join",
         "difficulty": "EASY",
         "domain": "Product Catalog",
-        "questionText": "Create sizes and colors tables. Use a CROSS JOIN to generate all possible size-color combinations for products.",
-        "schemaSql": "CREATE TABLE sizes (size_id INT, size_name VARCHAR(10)); CREATE TABLE colors (color_id INT, color_name VARCHAR(20)); INSERT INTO sizes VALUES (1, 'S'), (2, 'M'), (3, 'L'); INSERT INTO colors VALUES (1, 'Red'), (2, 'Blue'), (3, 'Green');",
-        "solutionQuery": "SELECT s.size_name, c.color_name FROM sizes s CROSS JOIN colors c ORDER BY s.size_name, c.color_name;"
+        "question_text": "Create sizes and colors tables. Use a CROSS JOIN to generate all possible size-color combinations for products.",
+        "schema_sql": "CREATE TABLE sizes (size_id INT, size_name VARCHAR(10)); CREATE TABLE colors (color_id INT, color_name VARCHAR(20)); INSERT INTO sizes VALUES (1, 'S'), (2, 'M'), (3, 'L'); INSERT INTO colors VALUES (1, 'Red'), (2, 'Blue'), (3, 'Green');",
+        "solution_query": "SELECT s.size_name, c.color_name FROM sizes s CROSS JOIN colors c ORDER BY s.size_name, c.color_name;"
       }
     ]
   },
@@ -534,14 +534,14 @@
         "sql": "SELECT order_id, (SELECT customer_name FROM customers WHERE customer_id = orders.customer_id) AS customer_name FROM orders; SELECT * FROM customers WHERE customer_id IN (SELECT customer_id FROM orders WHERE YEAR(order_date) = 2024); SELECT emp_id, emp_name FROM employees e WHERE salary > (SELECT AVG(salary) FROM employees WHERE department = e.department);"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Use Subqueries for Complex Filtering",
+        "question_title": "Use Subqueries for Complex Filtering",
         "difficulty": "MEDIUM",
         "domain": "Analytics",
-        "questionText": "Find customers who placed orders in 2024. First use a scalar subquery in SELECT to show order count per customer. Then use a columnar subquery with IN to filter only those customers.",
-        "schemaSql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1, '2024-01-15'), (102, 1, '2024-02-20'), (103, 2, '2024-03-10');",
-        "solutionQuery": "SELECT customer_id, name, (SELECT COUNT(*) FROM orders WHERE orders.customer_id = customers.customer_id AND EXTRACT(YEAR FROM order_date) = 2024) AS orders_in_2024 FROM customers WHERE customer_id IN (SELECT DISTINCT customer_id FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2024);"
+        "question_text": "Find customers who placed orders in 2024. First use a scalar subquery in SELECT to show order count per customer. Then use a columnar subquery with IN to filter only those customers.",
+        "schema_sql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT, customer_id INT, order_date DATE); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1, '2024-01-15'), (102, 1, '2024-02-20'), (103, 2, '2024-03-10');",
+        "solution_query": "SELECT customer_id, name, (SELECT COUNT(*) FROM orders WHERE orders.customer_id = customers.customer_id AND EXTRACT(YEAR FROM order_date) = 2024) AS orders_in_2024 FROM customers WHERE customer_id IN (SELECT DISTINCT customer_id FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2024);"
       }
     ]
   },
@@ -555,14 +555,14 @@
         "sql": "WITH customer_orders AS (SELECT customer_id, COUNT(*) AS order_count, SUM(total_amount) AS revenue FROM orders GROUP BY customer_id) SELECT customer_id, order_count, revenue FROM customer_orders WHERE revenue > 1000 ORDER BY revenue DESC;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Simplify Complex Queries with CTEs",
+        "question_title": "Simplify Complex Queries with CTEs",
         "difficulty": "MEDIUM",
         "domain": "Query Optimization",
-        "questionText": "Rewrite a complex query using a CTE: first calculate total revenue per customer, then filter for customers with revenue > $500 and show their name and revenue.",
-        "schemaSql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT, customer_id INT, total_amount NUMERIC(10, 2)); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1, 500), (102, 1, 600), (103, 2, 300), (104, 3, 700);",
-        "solutionQuery": "WITH customer_revenue AS (SELECT customer_id, SUM(total_amount) AS total_revenue FROM orders GROUP BY customer_id) SELECT c.customer_id, c.name, cr.total_revenue FROM customers c JOIN customer_revenue cr ON c.customer_id = cr.customer_id WHERE cr.total_revenue > 500 ORDER BY cr.total_revenue DESC;"
+        "question_text": "Rewrite a complex query using a CTE: first calculate total revenue per customer, then filter for customers with revenue > $500 and show their name and revenue.",
+        "schema_sql": "CREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (order_id INT, customer_id INT, total_amount NUMERIC(10, 2)); INSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'); INSERT INTO orders VALUES (101, 1, 500), (102, 1, 600), (103, 2, 300), (104, 3, 700);",
+        "solution_query": "WITH customer_revenue AS (SELECT customer_id, SUM(total_amount) AS total_revenue FROM orders GROUP BY customer_id) SELECT c.customer_id, c.name, cr.total_revenue FROM customers c JOIN customer_revenue cr ON c.customer_id = cr.customer_id WHERE cr.total_revenue > 500 ORDER BY cr.total_revenue DESC;"
       }
     ]
   },
@@ -576,14 +576,14 @@
         "sql": "SELECT product_id, name FROM products WHERE category = 'Electronics' UNION SELECT product_id, name FROM products WHERE price > 500 ORDER BY product_id;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Combine Result Sets with Set Operations",
+        "question_title": "Combine Result Sets with Set Operations",
         "difficulty": "MEDIUM",
         "domain": "Data Analysis",
-        "questionText": "Find all products that are either in the 'Electronics' category OR priced above $300. Use UNION to combine the results.",
-        "schemaSql": "CREATE TABLE products (product_id INT, name VARCHAR(100), category VARCHAR(50), price NUMERIC(10, 2)); INSERT INTO products VALUES (1, 'Laptop', 'Electronics', 1200), (2, 'Mouse', 'Electronics', 30), (3, 'Sofa', 'Furniture', 800), (4, 'Chair', 'Furniture', 150);",
-        "solutionQuery": "SELECT product_id, name, category, price FROM products WHERE category = 'Electronics' UNION SELECT product_id, name, category, price FROM products WHERE price > 300 ORDER BY product_id;"
+        "question_text": "Find all products that are either in the 'Electronics' category OR priced above $300. Use UNION to combine the results.",
+        "schema_sql": "CREATE TABLE products (product_id INT, name VARCHAR(100), category VARCHAR(50), price NUMERIC(10, 2)); INSERT INTO products VALUES (1, 'Laptop', 'Electronics', 1200), (2, 'Mouse', 'Electronics', 30), (3, 'Sofa', 'Furniture', 800), (4, 'Chair', 'Furniture', 150);",
+        "solution_query": "SELECT product_id, name, category, price FROM products WHERE category = 'Electronics' UNION SELECT product_id, name, category, price FROM products WHERE price > 300 ORDER BY product_id;"
       }
     ]
   },
@@ -597,14 +597,14 @@
         "sql": "SELECT emp_id, emp_name, salary, CASE WHEN salary < 50000 THEN 'Junior' WHEN salary < 100000 THEN 'Mid-Level' WHEN salary < 150000 THEN 'Senior' ELSE 'Executive' END AS salary_band FROM employees ORDER BY CASE WHEN salary > 100000 THEN 1 ELSE 2 END, salary DESC;"
       }
     ],
-    "practiceTasks": [
+    "practice_tasks": [
       {
-        "title": "Categorize Data with CASE WHEN",
+        "question_title": "Categorize Data with CASE WHEN",
         "difficulty": "MEDIUM",
         "domain": "Data Transformation",
-        "questionText": "Create a report showing employees with a salary band: 'Entry' for <$50k, 'Mid' for $50k-$100k, 'Senior' for $100k-$150k, and 'Executive' for >$150k. Count employees in each band.",
-        "schemaSql": "CREATE TABLE employees (emp_id INT, emp_name VARCHAR(100), salary NUMERIC(10, 2)); INSERT INTO employees VALUES (1, 'Alice', 45000), (2, 'Bob', 75000), (3, 'Charlie', 120000), (4, 'Diana', 160000), (5, 'Eve', 55000);",
-        "solutionQuery": "SELECT CASE WHEN salary < 50000 THEN 'Entry' WHEN salary < 100000 THEN 'Mid' WHEN salary < 150000 THEN 'Senior' ELSE 'Executive' END AS salary_band, COUNT(*) AS employee_count FROM employees GROUP BY CASE WHEN salary < 50000 THEN 'Entry' WHEN salary < 100000 THEN 'Mid' WHEN salary < 150000 THEN 'Senior' ELSE 'Executive' END ORDER BY salary_band;"
+        "question_text": "Create a report showing employees with a salary band: 'Entry' for <$50k, 'Mid' for $50k-$100k, 'Senior' for $100k-$150k, and 'Executive' for >$150k. Count employees in each band.",
+        "schema_sql": "CREATE TABLE employees (emp_id INT, emp_name VARCHAR(100), salary NUMERIC(10, 2)); INSERT INTO employees VALUES (1, 'Alice', 45000), (2, 'Bob', 75000), (3, 'Charlie', 120000), (4, 'Diana', 160000), (5, 'Eve', 55000);",
+        "solution_query": "SELECT CASE WHEN salary < 50000 THEN 'Entry' WHEN salary < 100000 THEN 'Mid' WHEN salary < 150000 THEN 'Senior' ELSE 'Executive' END AS salary_band, COUNT(*) AS employee_count FROM employees GROUP BY CASE WHEN salary < 50000 THEN 'Entry' WHEN salary < 100000 THEN 'Mid' WHEN salary < 150000 THEN 'Senior' ELSE 'Executive' END ORDER BY salary_band;"
       }
     ]
   }

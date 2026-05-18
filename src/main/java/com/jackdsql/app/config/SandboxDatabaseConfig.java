@@ -18,10 +18,10 @@ public class SandboxDatabaseConfig {
     @Value("${spring.datasource.url}")
     private String dbUrl;
 
-    @Value("${SANDBOX_DATASOURCE_USERNAME}")
+    @Value("${SANDBOX_DATASOURCE_USERNAME:postgres}")
     private String sandboxUsername;
 
-    @Value("${SANDBOX_DATASOURCE_PASSWORD}")
+    @Value("${SANDBOX_DATASOURCE_PASSWORD:rootpassword}")
     private String sandboxPassword;
 
     // Mark the default Spring datasource as @Primary so JPA/Hibernate always uses it
