@@ -1,0 +1,3 @@
+dynamic getHttpClientInternal() {
+  return null;
+}
