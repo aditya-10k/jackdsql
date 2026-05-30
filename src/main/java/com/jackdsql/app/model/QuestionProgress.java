@@ -3,7 +3,7 @@ package com.jackdsql.app.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "question_progress",
@@ -28,5 +28,5 @@ public class QuestionProgress {
     private boolean isCompleted = true;
 
     @Column(nullable = false)
-    private LocalDateTime completedAt = LocalDateTime.now();
+    private Instant completedAt = Instant.now();
 }

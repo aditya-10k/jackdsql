@@ -33,13 +33,19 @@ public class GroqProviderStrategy implements AiProviderStrategy{
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(message.getDecryptedApiKey());
 
-        String prompt =
-                "You are an expert SQL teacher for JackDSQL application.\n" +
-                        "Analyze the user's incorrect query and give a helpful hint. Do not give the solution query away.\n\n" +
-                        "Exercise Prompt: " + question.getQuestionText() + "\n" +
-                        "Database Table Schema Context:\n" + question.getSchemaSql() + "\n\n" +
-                        "User's Broken Query Input: " + message.getUserSqlCode() +
-                        "Solution query:" +question.getSolutionQuery();
+        String prompt;
+        if ("playground".equals(question.getId())) {
+            prompt = "You are an expert SQL teacher for JackDSQL application.\n" +
+                     "Analyze the user's SQL query in a general database playground/sandbox environment and provide helpful suggestions, design tips, potential syntax improvements, or debugging hints.\n\n" +
+                     "User's SQL Query Input:\n" + message.getUserSqlCode();
+        } else {
+            prompt = "You are an expert SQL teacher for JackDSQL application.\n" +
+                     "Analyze the user's incorrect query and give a helpful hint. Do not give the solution query away.\n\n" +
+                     "Exercise Prompt: " + question.getQuestionText() + "\n" +
+                     "Database Table Schema Context:\n" + question.getSchemaSql() + "\n\n" +
+                     "User's Broken Query Input: " + message.getUserSqlCode() + "\n" +
+                     "Solution Query: " + question.getSolutionQuery();
+        }
 
         Map<String, Object> requestBody = Map.of(
                 "model", "llama-3.3-70b-versatile", // Low-latency, fast processing standard production model

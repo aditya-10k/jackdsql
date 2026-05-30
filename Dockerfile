@@ -20,6 +20,7 @@ WORKDIR /backend
 # Pull the compiled .jar file from the builder stage
 COPY --from=builder /backend/target/*.jar app.jar
 
-EXPOSE 8080
+ENV SERVER_PORT=7860
+EXPOSE 7860
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

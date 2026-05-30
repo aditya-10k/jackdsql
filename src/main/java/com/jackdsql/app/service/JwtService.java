@@ -5,14 +5,17 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
+import java.sql.Struct;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 @Service
@@ -21,16 +24,31 @@ public class JwtService {
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
 
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+    public String generateAccessToken(UserDetails userDetails){
+        return buildToken(userDetails , 1000 * 60 * 15 , "access");
     }
 
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+    public String generateRefreshToken(UserDetails userDetails){
+        return buildToken(userDetails , 1000L * 60 *60 *24 *7 , "refresh");
+    }
+
+    public String extractTokenType(String token){
+        return extractClaim(token , claims -> claims.get("type" , String.class));
+    }
+
+    public String buildToken(
+            UserDetails userDetails ,
+            long expiration ,
+            String type
+    ){
+        Map<String , Object> claim = new HashMap<>();
+        claim.put("type" , type);
+
         return Jwts.builder()
-                .claims(extraClaims)
+                .claims(claim)
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 86400000))
+                .expiration(new Date(System.currentTimeMillis()+ expiration))
                 .signWith(getSignInKey())
                 .compact();
     }

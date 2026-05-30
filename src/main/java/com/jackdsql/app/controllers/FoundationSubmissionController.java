@@ -14,7 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Map;
 
 @RestController
@@ -61,7 +61,7 @@ public class FoundationSubmissionController {
             foundationProgressRepository.save(FoundationProgress.builder()
                             .userId(userId)
                             .topic(foundation)
-                            .completedAt(LocalDateTime.now())
+                            .completedAt(Instant.now())
                             .build());
         }
 

@@ -1,9 +1,9 @@
 package com.jackdsql.app.repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public interface ActivityProjection {
 
     String getQuestionId();
-    LocalDateTime getCompletedAt();
+    Instant getCompletedAt();
 }

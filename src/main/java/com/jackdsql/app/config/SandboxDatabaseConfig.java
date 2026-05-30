@@ -18,10 +18,10 @@ public class SandboxDatabaseConfig {
     @Value("${spring.datasource.url}")
     private String dbUrl;
 
-    @Value("${SANDBOX_DATASOURCE_USERNAME:postgres}")
+    @Value("${sandbox.datasource.username:jackdsql_reader}")
     private String sandboxUsername;
 
-    @Value("${SANDBOX_DATASOURCE_PASSWORD:rootpassword}")
+    @Value("${sandbox.datasource.password:readonly_password123}")
     private String sandboxPassword;
 
     // Mark the default Spring datasource as @Primary so JPA/Hibernate always uses it
@@ -30,6 +30,12 @@ public class SandboxDatabaseConfig {
     @ConfigurationProperties("spring.datasource")
     public DataSource primaryDataSource(DataSourceProperties properties) {
         return properties.initializeDataSourceBuilder().build();
+    }
+
+    @Primary
+    @Bean(name = "jdbcTemplate")
+    public JdbcTemplate jdbcTemplate(@Qualifier("dataSource") DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
     }
 
     @Bean(name = "sandboxDataSource")

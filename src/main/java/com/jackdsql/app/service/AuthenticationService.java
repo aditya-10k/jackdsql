@@ -11,16 +11,22 @@ import com.jackdsql.app.dto.GoogleAuthRequest;
 import com.jackdsql.app.dto.RegisterRequest;
 import com.jackdsql.app.model.User;
 import com.jackdsql.app.repository.UserRepository;
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -32,10 +38,44 @@ public class AuthenticationService {
     private final JwtService jwtService ;
     private final AuthenticationManager authenticationManager;
 
+    @Autowired
+    private MailerService mailerService ;
+
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private  String clientId;
 
-    public AuthenticationResponse register(RegisterRequest registerRequest){
+    public AuthenticationResponse refreshToken(
+            String authHeader
+    ){
+
+        if( authHeader == null || !authHeader.startsWith("Bearer ")){
+            throw  new RuntimeException("Missing Refresh Token");
+        }
+
+        String refreshToken = authHeader.substring(7);
+
+        String tokenType = jwtService.extractTokenType(refreshToken);
+
+        if(!"refresh".equals(tokenType)){
+            throw  new RuntimeException("Token is not refresh token");
+        }
+
+        String userName = jwtService.extractUsername(refreshToken);
+
+        User user = userRepository.findByEmail(userName)
+                .orElseThrow();
+
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshTokenNew = jwtService.generateRefreshToken(user);
+
+        return AuthenticationResponse.builder()
+                .message("Tokens refreshed")
+                .refreshToken(refreshTokenNew)
+                .accessToken(accessToken)
+                .build();
+    }
+
+    public AuthenticationResponse register(RegisterRequest registerRequest) throws MessagingException {
 
         var user = User.builder()
                 .name(registerRequest.name())
@@ -44,10 +84,34 @@ public class AuthenticationService {
                 .build();
 
         userRepository.save(user);
-        var jwtToken = jwtService.generateToken(user);
+        var jwtAccessToken = jwtService.generateAccessToken(user);
+        var jwtRefreshToken = jwtService.generateRefreshToken(user);
 
-        return AuthenticationResponse.builder().token(jwtToken).build();
+        mailerService.sendWelcomeMail(registerRequest.email());
 
+        return AuthenticationResponse.builder().accessToken(jwtAccessToken).refreshToken(jwtRefreshToken).build();
+
+    }
+
+    public AuthenticationResponse resetPassword(UserDetails userDetails ,String updatedPassword ){
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("UserNotFound"));
+
+        if(passwordEncoder.matches(updatedPassword , user.getPassword())){
+
+            return AuthenticationResponse.builder().message("Password cannot be same as the earlier one").build();
+        }
+        else {
+            user.setPassword(passwordEncoder.encode(updatedPassword));
+
+            userRepository.save(user);
+
+            var jwtAccessToken = jwtService.generateAccessToken(user);
+            var jwtRefreshToken = jwtService.generateRefreshToken(user);
+
+            return AuthenticationResponse.builder().accessToken(jwtAccessToken).refreshToken(jwtRefreshToken).build();
+        }
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request){
@@ -58,9 +122,10 @@ public class AuthenticationService {
 
         var user = userRepository.findByEmail((request.email())).orElseThrow();
 
-        var jwtToken = jwtService.generateToken(user);
+        var jwtAccessToken = jwtService.generateAccessToken(user);
+        var jwtRefreshToken = jwtService.generateRefreshToken(user);
 
-        return AuthenticationResponse.builder().token(jwtToken).build();
+        return AuthenticationResponse.builder().accessToken(jwtAccessToken).refreshToken(jwtRefreshToken).message("success").build();
     }
 
     public AuthenticationResponse authenticateWithGoogle(GoogleAuthRequest googleAuthRequest) throws GeneralSecurityException, IOException {
@@ -85,8 +150,10 @@ public class AuthenticationService {
                     return userRepository.save(newUser);
                 });
 
-                var jwtToken = jwtService.generateToken(user);
-                return AuthenticationResponse.builder().token(jwtToken).build();
+                var jwtAccessToken = jwtService.generateAccessToken(user);
+                var jwtRefreshToken = jwtService.generateRefreshToken(user);
+
+                return AuthenticationResponse.builder().accessToken(jwtAccessToken).refreshToken(jwtRefreshToken).build();
             } else {
                 throw new RuntimeException("Invalid Google ID token");
             }

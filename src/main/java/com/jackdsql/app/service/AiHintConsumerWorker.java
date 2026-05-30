@@ -47,8 +47,21 @@ public class AiHintConsumerWorker {
         log.info("RabbitMQ Worker processing task tracking ID: {}", message.getRequestId());
 
         try {
-            Question question = questionRepository.findById(message.getQuestionId())
-                    .orElseThrow(() -> new IllegalArgumentException("Question location index invalid: "));
+            Question question;
+            if ("playground".equals(message.getQuestionId())) {
+                question = new Question();
+                question.setId("playground");
+                question.setSource("playground");
+                question.setDomain("playground");
+                question.setDifficulty("easy");
+                question.setQuestionTitle("SQL Playground");
+                question.setQuestionText("Analyze the user's SQL query and provide syntax, design, or logical improvement suggestions.");
+                question.setSchemaSql("N/A (General sandbox environment)");
+                question.setSolutionQuery("N/A");
+            } else {
+                question = questionRepository.findById(message.getQuestionId())
+                        .orElseThrow(() -> new IllegalArgumentException("Question location index invalid: "));
+            }
 
             String generatedHint = "";
 

@@ -32,13 +32,13 @@ public class StatsService {
         );
     }
 
-    public Map<LocalDate, List<String>> getCompletionHistory(String userId) {
+    public Map<String, List<String>> getCompletionHistory(String userId) {
         List<ActivityProjection> fActivities = fProgressRepo.findActivityLogByUserId(userId);
         List<ActivityProjection> qActivities = qProgressRepo.findActivityLogByUserId(userId);
 
         return Stream.concat(fActivities.stream(), qActivities.stream())
                 .collect(Collectors.groupingBy(
-                        a -> a.getCompletedAt().toLocalDate(),
+                        a -> a.getCompletedAt().toString(),
                         Collectors.mapping(ActivityProjection::getQuestionId, Collectors.toList())
                 ));
     }
