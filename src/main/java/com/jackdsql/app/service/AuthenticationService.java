@@ -176,7 +176,13 @@ public class AuthenticationService {
                         .email(email)
                         .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                         .build();
-                return userRepository.save(newUser);
+                User savedUser = userRepository.save(newUser);
+                try {
+                    mailerService.sendWelcomeMail(email);
+                } catch (Exception e) {
+                    System.err.println("Failed to send welcome email for OAuth user: " + e.getMessage());
+                }
+                return savedUser;
             });
 
             var jwtAccessToken = jwtService.generateAccessToken(user);
