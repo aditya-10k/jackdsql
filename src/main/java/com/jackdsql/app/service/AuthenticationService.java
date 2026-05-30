@@ -12,13 +12,11 @@ import com.jackdsql.app.dto.RegisterRequest;
 import com.jackdsql.app.model.User;
 import com.jackdsql.app.repository.UserRepository;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,7 +24,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -130,38 +127,71 @@ public class AuthenticationService {
 
     public AuthenticationResponse authenticateWithGoogle(GoogleAuthRequest googleAuthRequest) throws GeneralSecurityException, IOException {
         try {
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-                    .setAudience(Collections.singleton(clientId))
+            String token = googleAuthRequest.idToken();
+            String email;
+            String name;
+
+            // Detect token type: a JWT has exactly 3 base64url parts separated by dots.
+            // An access token (opaque) does not follow this format.
+            boolean isJwt = token != null && token.split("\\.").length == 3;
+
+            if (isJwt) {
+                // --- ID Token path: verify with GoogleIdTokenVerifier ---
+                GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                        .setAudience(Collections.singleton(clientId))
+                        .build();
+
+                GoogleIdToken idToken = verifier.verify(token);
+                if (idToken == null) {
+                    throw new RuntimeException("Invalid Google ID token");
+                }
+
+                GoogleIdToken.Payload payload = idToken.getPayload();
+                email = payload.getEmail();
+                name = (String) payload.get("name");
+
+            } else {
+                // --- Access Token path: call Google userinfo endpoint ---
+                NetHttpTransport transport = new NetHttpTransport();
+                String userInfoUrl = "https://www.googleapis.com/oauth2/v3/userinfo";
+                com.google.api.client.http.HttpRequest request = transport
+                        .createRequestFactory()
+                        .buildGetRequest(new com.google.api.client.http.GenericUrl(userInfoUrl));
+                request.getHeaders().setAuthorization("Bearer " + token);
+
+                com.google.api.client.http.HttpResponse response = request.execute();
+                String responseBody = response.parseAsString();
+
+                com.google.gson.JsonObject userInfo = new com.google.gson.JsonParser()
+                        .parse(responseBody)
+                        .getAsJsonObject();
+
+                email = userInfo.get("email").getAsString();
+                name = userInfo.has("name") ? userInfo.get("name").getAsString() : email;
+            }
+
+            var user = userRepository.findByEmail(email).orElseGet(() -> {
+                var newUser = User.builder()
+                        .name(name)
+                        .email(email)
+                        .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                        .build();
+                return userRepository.save(newUser);
+            });
+
+            var jwtAccessToken = jwtService.generateAccessToken(user);
+            var jwtRefreshToken = jwtService.generateRefreshToken(user);
+
+            return AuthenticationResponse.builder()
+                    .accessToken(jwtAccessToken)
+                    .refreshToken(jwtRefreshToken)
                     .build();
 
-            GoogleIdToken idToken = verifier.verify((googleAuthRequest.idToken()));
-
-            if (idToken != null) {
-                GoogleIdToken.Payload payload = idToken.getPayload();
-                String email = payload.getEmail();
-                String name = (String) payload.get("name");
-
-                var user = userRepository.findByEmail(email).orElseGet(() -> {
-                    var newUser = User.builder()
-                            .name(name)
-                            .email(email)
-                            .password(passwordEncoder.encode((UUID.randomUUID().toString())))
-                            .build();
-                    return userRepository.save(newUser);
-                });
-
-                var jwtAccessToken = jwtService.generateAccessToken(user);
-                var jwtRefreshToken = jwtService.generateRefreshToken(user);
-
-                return AuthenticationResponse.builder().accessToken(jwtAccessToken).refreshToken(jwtRefreshToken).build();
-            } else {
-                throw new RuntimeException("Invalid Google ID token");
-            }
         } catch (Exception e) {
             System.err.println("Google Auth Error Type: " + e.getClass().getName());
             System.err.println("Google Auth Error Message: " + e.getMessage());
-            e.printStackTrace(); // This will print the full stack trace to your IntelliJ/VS Code console
-            throw new RuntimeException("Google authentication failed: " + e.getMessage() , e);
+            e.printStackTrace();
+            throw new RuntimeException("Google authentication failed: " + e.getMessage(), e);
         }
     }
 }

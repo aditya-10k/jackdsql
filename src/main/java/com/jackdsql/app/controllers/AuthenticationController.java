@@ -80,13 +80,20 @@ public class AuthenticationController {
     }
 
     @PostMapping("/verifyOtp")
-    public ResponseEntity<AuthenticationResponse> verifyOtpAndResetPassword(@RequestBody Map<String , String> body){
+    public ResponseEntity<AuthenticationResponse> verifyOtpAndResetPassword(@RequestBody Map<String, String> body){
 
         String password = body.get("password");
         String mail = body.get("email");
         String otp = body.get("otp");
 
-        return ResponseEntity.ok(otpAndChangePasswordService.verifyOtpAndChangePassword(otp,mail,password));
+        AuthenticationResponse response = otpAndChangePasswordService.verifyOtpAndChangePassword(otp, mail, password);
+
+        // If no access token was generated, the OTP was invalid or expired — return 400
+        if (response.getAccessToken() == null || response.getAccessToken().isEmpty()) {
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/deleteUser")
