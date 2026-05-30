@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "foundation_progress" , uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id" , "topic_id"})})
@@ -31,5 +31,5 @@ public class FoundationProgress {
     private boolean isCompleted = true ;
 
     @Column(nullable = false)
-    private LocalDateTime completedAt = LocalDateTime.now();
+    private Instant completedAt = Instant.now();
 }
