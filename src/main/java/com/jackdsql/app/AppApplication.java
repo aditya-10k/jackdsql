@@ -19,10 +19,10 @@ public class AppApplication {
 	@Bean
 	public CommandLineRunner initSearchPath(JdbcTemplate jdbcTemplate) {
 		return args -> {
-			try {
-				// 1. Reset search_path
-				jdbcTemplate.execute("ALTER ROLE CURRENT_USER RESET search_path");
-				jdbcTemplate.execute("ALTER DATABASE " + jdbcTemplate.getDataSource().getConnection().getCatalog() + " RESET search_path");
+				// 1. Set default search_path database and role wide
+				String dbName = jdbcTemplate.getDataSource().getConnection().getCatalog();
+				jdbcTemplate.execute("ALTER ROLE CURRENT_USER SET search_path TO \"$user\", public");
+				jdbcTemplate.execute("ALTER DATABASE " + dbName + " SET search_path TO \"$user\", public");
 				
 				// 2. Query and print current search_path
 				String currentPath = jdbcTemplate.queryForObject("SHOW search_path", String.class);

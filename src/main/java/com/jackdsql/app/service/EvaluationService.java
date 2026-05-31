@@ -86,7 +86,7 @@ public class EvaluationService {
                 // to PgBouncer's pool. If omitted, the next borrower (e.g. register/login)
                 // gets a connection whose search_path points at the already-dropped sandbox
                 // schema, causing 'relation "users" does not exist'.
-                try { statement.execute("SET search_path TO DEFAULT"); } catch (Exception ignored) {}
+                try { statement.execute("SET search_path TO \"$user\", public"); } catch (Exception ignored) {}
             }
             return result;
         }
@@ -142,7 +142,7 @@ public class EvaluationService {
                 result = new PreviewResponse(null, null, userEx.getMessage());
             } finally {
                 // Always reset search_path before returning connection to PgBouncer pool
-                try { statement.execute("SET search_path TO DEFAULT"); } catch (Exception ignored) {}
+                try { statement.execute("SET search_path TO \"$user\", public"); } catch (Exception ignored) {}
             }
             return result;
         } catch (Exception e) {
@@ -193,7 +193,7 @@ public class EvaluationService {
                 result = false;
             } finally {
                 // Always reset search_path before returning connection to PgBouncer pool
-                try { statement.execute("SET search_path TO DEFAULT"); } catch (Exception ignored) {}
+                try { statement.execute("SET search_path TO \"$user\", public"); } catch (Exception ignored) {}
             }
             return result;
         } catch (Exception e) {
