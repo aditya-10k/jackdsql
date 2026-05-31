@@ -18,11 +18,28 @@ public class AppApplication {
 	public CommandLineRunner initSearchPath(JdbcTemplate jdbcTemplate) {
 		return args -> {
 			try {
+				// 1. Reset search_path
 				jdbcTemplate.execute("ALTER ROLE CURRENT_USER RESET search_path");
 				jdbcTemplate.execute("ALTER DATABASE " + jdbcTemplate.getDataSource().getConnection().getCatalog() + " RESET search_path");
-				System.out.println("Startup: Successfully reset search_path for user and database.");
+				
+				// 2. Query and print current search_path
+				String currentPath = jdbcTemplate.queryForObject("SHOW search_path", String.class);
+				System.out.println("Startup Diagnostics: CURRENT SESSION search_path = " + currentPath);
+				
+				// 3. Check what schemas/tables exist
+				List<Map<String, Object>> tables = jdbcTemplate.queryForList(
+					"SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema')"
+				);
+				System.out.println("Startup Diagnostics: Existing tables count = " + tables.size());
+				for (Map<String, Object> table : tables) {
+					System.out.println("  - " + table.get("table_schema") + "." + table.get("table_name"));
+				}
+				
+				// 4. Force search_path for the current connection if it's incorrect
+				jdbcTemplate.execute("SET search_path TO \"$user\", public");
+				System.out.println("Startup: Done running diagnostics and setting search_path session override.");
 			} catch (Exception e) {
-				System.err.println("Startup search_path reset warning: " + e.getMessage());
+				System.err.println("Startup diagnostics error: " + e.getMessage());
 			}
 		};
 	}
