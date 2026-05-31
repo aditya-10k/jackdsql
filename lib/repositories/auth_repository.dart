@@ -24,6 +24,7 @@ abstract class AuthRepository {
     required String password,
   });
   Future<String> getGoogleClientId();
+  Future<bool> refreshTokensOnStartup();
 }
 
 
@@ -173,6 +174,14 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       final authResponse = AuthResponse.fromJson(response.data);
+      // If no access token returned, the server responded with an error message
+      // (e.g. OTP expired, OTP mismatch). Surface it as an exception.
+      if (authResponse.accessToken.isEmpty) {
+        throw ValidationException(
+          message: authResponse.message ?? 'OTP verification failed',
+          code: '400',
+        );
+      }
       await _apiClient.saveToken(authResponse.accessToken);
       await _apiClient.saveRefreshToken(authResponse.refreshToken);
       await HiveService.saveToken(authResponse.accessToken);
@@ -191,6 +200,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (e) {
       throw _handleException(e);
     }
+  }
+
+  @override
+  Future<bool> refreshTokensOnStartup() async {
+    return _apiClient.refreshOnStartup();
   }
 
   AppException _handleException(dynamic e) {

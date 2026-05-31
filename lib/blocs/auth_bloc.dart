@@ -158,6 +158,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
       emit(AuthAuthenticated(token: token));
+      add(const AuthGetProfileEvent());
     } catch (e) {
       emit(AuthError(
         message: e is AppException ? e.message : 'Login failed',
@@ -177,6 +178,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         name: event.name,
       );
       emit(AuthAuthenticated(token: token));
+      add(const AuthGetProfileEvent());
     } catch (e) {
       emit(AuthError(
         message: e is AppException ? e.message : 'Registration failed',
@@ -192,6 +194,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final token = await _authRepository.googleAuth(idToken: event.idToken);
       emit(AuthAuthenticated(token: token));
+      add(const AuthGetProfileEvent());
     } catch (e) {
       emit(AuthError(
         message: e is AppException ? e.message : 'Google sign-in failed',
@@ -205,12 +208,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       final isAuth = await _authRepository.isAuthenticated();
-      if (isAuth) {
-        final profile = await _authRepository.getUserProfile();
-        emit(AuthAuthenticated(token: 'existing', profile: profile));
-      } else {
+      if (!isAuth) {
         emit(const AuthUnauthenticated());
+        return;
       }
+
+      // Try to silently refresh on startup to get a fresh 30-day token pair.
+      // If it fails (no network / server down), proceed with the existing token —
+      // it's a 30-day token so it's almost certainly still valid.
+      await _authRepository.refreshTokensOnStartup();
+
+      final profile = await _authRepository.getUserProfile();
+      emit(AuthAuthenticated(token: 'existing', profile: profile));
     } catch (e) {
       emit(const AuthUnauthenticated());
     }
@@ -273,6 +282,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
       emit(AuthAuthenticated(token: token));
+      add(const AuthGetProfileEvent());
     } catch (e) {
       emit(AuthError(
         message: e is AppException ? e.message : 'OTP verification failed',
