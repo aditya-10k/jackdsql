@@ -25,7 +25,7 @@ public class JwtService {
     private String secretKey;
 
     public String generateAccessToken(UserDetails userDetails){
-        return buildToken(userDetails , 1000 * 60 * 15 , "access");
+        return buildToken(userDetails , 1000L * 60 * 60 * 24 * 30 , "access"); // 30 days
     }
 
     public String generateRefreshToken(UserDetails userDetails){
