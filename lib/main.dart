@@ -27,6 +27,7 @@ import 'package:jackdsql/screens/question_detail_screen.dart';
 import 'package:jackdsql/screens/foundation_detail_screen.dart';
 import 'package:jackdsql/screens/playground_screen.dart';
 import 'package:jackdsql/screens/api_keys_screen.dart';
+import 'package:jackdsql/screens/responsive_layout_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -98,14 +99,14 @@ class MyApp extends StatelessWidget {
         child: MaterialApp(
           title: 'JackDSQL',
           theme: AppTheme.darkTheme,
-          home: const RouteManager(),
+          home: const ResponsiveLayoutGate(mobileApp: RouteManager()),
           routes: {
-            '/login': (context) => const LoginScreen(),
-            '/dashboard': (context) => const DashboardScreen(),
-            '/foundation_detail': (context) => const FoundationDetailScreen(),
-            '/question_detail': (context) => const QuestionDetailScreen(),
-            '/playground': (context) => const PlaygroundScreen(),
-            '/api_keys': (context) => const ApiKeysScreen(),
+            '/login': (context) => const ResponsiveLayoutGate(mobileApp: LoginScreen()),
+            '/dashboard': (context) => const ResponsiveLayoutGate(mobileApp: DashboardScreen()),
+            '/foundation_detail': (context) => const ResponsiveLayoutGate(mobileApp: FoundationDetailScreen()),
+            '/question_detail': (context) => const ResponsiveLayoutGate(mobileApp: QuestionDetailScreen()),
+            '/playground': (context) => const ResponsiveLayoutGate(mobileApp: PlaygroundScreen()),
+            '/api_keys': (context) => const ResponsiveLayoutGate(mobileApp: ApiKeysScreen()),
           },
           debugShowCheckedModeBanner: false,
         ),

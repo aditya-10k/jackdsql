@@ -4,9 +4,10 @@ import 'package:flutter/foundation.dart';
 // Constants
 class AppConstants {
   // API
-  static final String baseUrl = kIsWeb
-      ? 'http://localhost:8080'
-      : (Platform.isAndroid ? 'http://10.0.2.2:8080' : 'http://localhost:8080');
+  // static final String baseUrl = kIsWeb
+  //     ? 'http://localhost:8080'
+  //     : (Platform.isAndroid ? 'http://10.0.2.2:8080' : 'http://localhost:8080');
+  static final String baseUrl = "https://adityx10-jackdsql-api.hf.space";
   static const String apiPrefix = '/api';
   
   // Endpoints

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -44,12 +45,14 @@ class _LoginScreenState extends State<LoginScreen> {
   GoogleSignIn? _googleSignIn;
   String? _googleClientId;
 
+  Timer? _healthTimer;
+
   @override
   void initState() {
     super.initState();
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
-    _checkSystemHealth();
+    _startSystemHealthChecks();
     _initGoogleSignIn();
   }
 
@@ -57,7 +60,12 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _healthTimer?.cancel();
     super.dispose();
+  }
+
+  void _startSystemHealthChecks() {
+    _checkSystemHealth();
   }
 
   Future<void> _checkSystemHealth() async {
@@ -68,14 +76,32 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() {
           _isSystemOnline = isOnline;
         });
+        
+        if (isOnline) {
+          _healthTimer?.cancel();
+          _healthTimer = null;
+        } else {
+          _scheduleNextHealthCheck();
+        }
       }
     } catch (_) {
       if (mounted) {
         setState(() {
           _isSystemOnline = false;
         });
+        _scheduleNextHealthCheck();
       }
     }
+  }
+
+  void _scheduleNextHealthCheck() {
+    _healthTimer?.cancel();
+    if (!mounted) return;
+    _healthTimer = Timer(const Duration(seconds: 15), () {
+      if (mounted) {
+        _checkSystemHealth();
+      }
+    });
   }
 
   Future<void> _initGoogleSignIn() async {
@@ -89,15 +115,18 @@ class _LoginScreenState extends State<LoginScreen> {
           _googleClientId = clientId;
         }
       } catch (e) {
-        debugPrint('Failed to load Google Client ID: $e');
+        debugPrint('Failed to load Google Client ID from backend: $e');
       }
     }
 
-    if (_googleClientId != null && mounted) {
+    if (mounted) {
       setState(() {
+        // Always initialize GoogleSignIn.
+        // On Web: GIS reads client ID from the meta tag in index.html at page load.
+        // Passing clientId to constructor causes a re-initialization conflict → idToken becomes null.
+        // On Android/iOS: client ID is in google-services.json / GoogleService-Info.plist.
         _googleSignIn = GoogleSignIn(
-          clientId: _googleClientId,
-          scopes: ['email', 'profile'],
+          scopes: ['openid', 'email', 'profile'],
         );
       });
     }
@@ -128,16 +157,21 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final String? idToken = googleAuth.idToken;
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      if (idToken == null) {
-        throw Exception('Google ID token is null');
+      // accessToken is always returned by the signIn() popup (OAuth2 flow).
+      // idToken is only populated by One Tap / rendered button flows — not by signIn().
+      final String? token = googleAuth.accessToken ?? googleAuth.idToken;
+
+      if (token == null || token.isEmpty) {
+        throw Exception(
+          'Google Sign-In did not return a token. '
+          'Ensure your Google Cloud Console has the correct authorized JavaScript origins.',
+        );
       }
 
       if (mounted) {
-        context.read<AuthBloc>().add(AuthGoogleSignInEvent(idToken: idToken));
+        context.read<AuthBloc>().add(AuthGoogleSignInEvent(idToken: token));
       }
     } catch (e) {
       if (mounted) {
@@ -772,49 +806,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Terminal icon logo with glow
-                      SizedBox(height: 20),
-                      Container(
-                        width: 92,
-                        height: 92,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF13171e),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.12),
-                              blurRadius: 16,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Image.asset(
-                          "assets/database (1).png",
-                          width: 72,
-                          height: 72,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      const Text(
-                        'jackdsql',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 42,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: -0.5,
-                        ),
+                      // Brand Logo
+                      const SizedBox(height: 20),
+                      Image.asset(
+                        "assets/logoInCol.png",
+                        width: 200,
+                        height: 200,
+                        fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 8),
                       const Text(
                         'Welcome Back. Initialize session.',
                         style: TextStyle(color: Colors.white54, fontSize: 14),
                       ),
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 36),
                       // Core Box Form
                       Container(
                         padding: const EdgeInsets.all(28),

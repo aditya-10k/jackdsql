@@ -41,28 +41,14 @@ class _SplashScreenState extends State<SplashScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
-                  'assets/database (1).png',
-                  width: 120,
-                  height: 120,
+                  'assets/logoInCol.png',
+                  width: 240,
+                  height: 240,
                   fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'jackdsql',
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'jacked in sql.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 64),
+                const SizedBox(height: 20),
+                Text("jacked in sql."),
+                SizedBox(height : 48),
                 SizedBox(
                   width: 40,
                   height: 40,

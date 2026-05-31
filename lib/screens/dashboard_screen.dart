@@ -52,13 +52,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _onTabTapped(int index) {
     setState(() => _selectedIndex = index);
-    if (index == 0) {
+    // Only fetch if data isn't already loaded — avoids redundant API calls
+    if (index == 0 && context.read<UserBloc>().state is! UserOverviewLoaded) {
       context.read<UserBloc>().add(const UserFetchOverviewEvent());
-    } else if (index == 1) {
+    } else if (index == 1 && context.read<FoundationBloc>().state is! FoundationCatalogueLoaded) {
       context.read<FoundationBloc>().add(const FoundationFetchCatalogueEvent());
-    } else if (index == 2) {
+    } else if (index == 2 && context.read<QuestionBloc>().state is! QuestionGroupedLoaded) {
       context.read<QuestionBloc>().add(const QuestionFetchGroupedEvent());
-    } else if (index == 3) {
+    } else if (index == 3 && context.read<UserBloc>().state is! UserOverviewLoaded) {
       context.read<UserBloc>().add(const UserFetchOverviewEvent());
     }
   }
@@ -155,32 +156,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      title: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppTheme.primaryColor, width: 1.5),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Image.asset(
-              "assets/database (1).png",
-              width: 16,
-              height: 16,
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'jackdsql',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
+      title: Image.asset(
+        "assets/logoInRow.png",
+        height: 32,
+        fit: BoxFit.contain,
       ),
       elevation: 0,
       backgroundColor: AppTheme.surfaceColor,

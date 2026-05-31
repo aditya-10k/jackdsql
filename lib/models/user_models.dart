@@ -53,12 +53,18 @@ class UserOverview {
   factory UserOverview.fromJson(Map<String, dynamic> json) {
     final activityMap = json['activity_history'] as Map<String, dynamic>? ?? {};
 
-    // Convert any nested lists properly
+    // Group items by local timezone date representation (YYYY-MM-DD)
     final correctedActivity = <String, List<String>>{};
     activityMap.forEach((key, value) {
       if (value is List) {
-        correctedActivity[key] =
-            List<String>.from(value.map((e) => e.toString()));
+        final parsedDate = DateTime.tryParse(key);
+        if (parsedDate != null) {
+          final localDate = parsedDate.toLocal();
+          final localKey = "${localDate.year}-${localDate.month.toString().padLeft(2, '0')}-${localDate.day.toString().padLeft(2, '0')}";
+          
+          correctedActivity.putIfAbsent(localKey, () => []);
+          correctedActivity[localKey]!.addAll(List<String>.from(value.map((e) => e.toString())));
+        }
       }
     });
 
