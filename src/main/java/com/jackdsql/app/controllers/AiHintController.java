@@ -4,6 +4,7 @@ import com.jackdsql.app.dto.AiHintMessage;
 import com.jackdsql.app.model.AiProvider;
 import com.jackdsql.app.model.UserApiKey;
 import com.jackdsql.app.model.UserApiKeyId;
+import com.jackdsql.app.repository.AiHintResultRepository;
 import com.jackdsql.app.repository.SseEmittersRepository;
 import com.jackdsql.app.repository.UserApiRepository;
 import com.jackdsql.app.service.AiHintProducerService;
@@ -37,7 +38,10 @@ public class AiHintController {
     private SseEmittersRepository sseEmittersRepository ;
 
     @Autowired
-    private  AiHintProducerService aiHintProducerService ;
+    private AiHintProducerService aiHintProducerService ;
+
+    @Autowired
+    private AiHintResultRepository aiHintResultRepository ;
 
     @PostMapping("/hint/{questionId}")
     public ResponseEntity<Map<String,String>> requestQuestionHint(
@@ -95,5 +99,18 @@ public class AiHintController {
         return emitter ;
     }
 
+    /**
+     * Web polling endpoint — returns the hint once ready, or 204 (No Content) if still pending.
+     * The result is consumed on first successful read (one-shot).
+     */
+    @GetMapping("/hint/result/{requestId}")
+    public ResponseEntity<Map<String, String>> getHintResult(
+            @PathVariable String requestId,
+            @AuthenticationPrincipal UserDetails details) {
+
+        return aiHintResultRepository.pollResult(requestId)
+                .map(hint -> ResponseEntity.ok(Map.of("requestId", requestId, "hint", hint)))
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
 
 }

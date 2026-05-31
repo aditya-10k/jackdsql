@@ -5,6 +5,7 @@ import com.jackdsql.app.dto.AiHintMessage;
 import com.jackdsql.app.model.AiProvider;
 import com.jackdsql.app.model.Question;
 import com.jackdsql.app.model.UserApiKey;
+import com.jackdsql.app.repository.AiHintResultRepository;
 import com.jackdsql.app.repository.QuestionRepository;
 import com.jackdsql.app.repository.SseEmittersRepository;
 import com.jackdsql.app.repository.UserApiRepository;
@@ -41,6 +42,9 @@ public class AiHintConsumerWorker {
 
     @Autowired
     private SseEmittersRepository sseEmittersRepository ;
+
+    @Autowired
+    private AiHintResultRepository aiHintResultRepository ;
 
     @RabbitListener(queues = RabbitMQConfig.HINT_QUEUE)
     public void processIncomingHintRequest(AiHintMessage message) {
@@ -80,6 +84,10 @@ public class AiHintConsumerWorker {
             log.info("Successfully resolved execution query pipeline for Request ID: {}", message.getRequestId());
             log.info("Resulting hint output text: \n{}", generatedHint);
 
+            // Always store result for web polling clients (regardless of SSE availability)
+            aiHintResultRepository.store(message.getRequestId(), generatedHint);
+            log.info("Hint stored in result repository for polling access, Request ID: {}", message.getRequestId());
+
             SseEmitter activeStream = sseEmittersRepository.get(message.getUserId());
 
             if(activeStream != null){
@@ -92,9 +100,11 @@ public class AiHintConsumerWorker {
                     activeStream.send(SseEmitter.event().name("AI Hint").data(data));
                     log.info("Hint push successfully via SSE");
                 } catch (Exception e) {
-                    log.warn("Failed to delever Hint via SSE");
+                    log.warn("Failed to deliver Hint via SSE");
                     sseEmittersRepository.delete(message.getUserId());
                 }
+            } else {
+                log.info("No active SSE stream for user {}. Result available via polling.", message.getUserId());
             }
 
         } catch (Exception fatalException) {
