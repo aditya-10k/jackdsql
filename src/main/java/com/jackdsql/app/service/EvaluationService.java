@@ -14,8 +14,25 @@ public class EvaluationService {
 
     private final JdbcTemplate sandboxJdbcTemplate;
 
-    public PreviewResponse getOpenPlaygroundPreview(String userSql){
+    private void validateQuery(String userSql) {
+        if (userSql == null) return;
+        String upper = userSql.toUpperCase();
+        if (upper.contains("ALTER ROLE") ||
+            upper.contains("ALTER DATABASE") ||
+            upper.contains("ALTER SYSTEM") ||
+            upper.contains("DROP DATABASE") ||
+            upper.contains("DROP ROLE") ||
+            upper.contains("CREATE ROLE") ||
+            upper.contains("GRANT ") ||
+            upper.contains("REVOKE ") ||
+            upper.contains("SET SEARCH_PATH") ||
+            upper.contains("DROP SCHEMA")) {
+            throw new IllegalArgumentException("Unauthorized query: Schema/role altering commands are rejected.");
+        }
+    }
 
+    public PreviewResponse getOpenPlaygroundPreview(String userSql){
+        validateQuery(userSql);
         String executionId = "play_" + UUID.randomUUID().toString().replace("-","");
 
         try(Connection connection = sandboxJdbcTemplate.getDataSource().getConnection();
@@ -73,6 +90,7 @@ public class EvaluationService {
     }
 
     public PreviewResponse getPreview(Question question, String userSql) {
+        validateQuery(userSql);
         String executionId = "exec_" + UUID.randomUUID().toString().replace("-", "");
 
         try (Connection connection = sandboxJdbcTemplate.getDataSource().getConnection();
@@ -112,6 +130,7 @@ public class EvaluationService {
     }
 
     public boolean compareResults(Question question, String userSql) {
+        validateQuery(userSql);
         String executionIdActual = "sud_act_" + UUID.randomUUID().toString().replace("-", "");
         String executionIdExpected = "sud_exp_" + UUID.randomUUID().toString().replace("-", "");
 
