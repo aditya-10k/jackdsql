@@ -126,6 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Passing clientId to constructor causes a re-initialization conflict → idToken becomes null.
         // On Android/iOS: client ID is in google-services.json / GoogleService-Info.plist.
         _googleSignIn = GoogleSignIn(
+          serverClientId: kIsWeb ? null : _googleClientId,
           scopes: ['openid', 'email', 'profile'],
         );
       });
