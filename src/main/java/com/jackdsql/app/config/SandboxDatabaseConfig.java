@@ -15,8 +15,17 @@ import javax.sql.DataSource;
 @Configuration
 public class SandboxDatabaseConfig {
 
+    // Primary pooled URL (PgBouncer, port 6543) — used by Hibernate/JPA
     @Value("${spring.datasource.url}")
-    private String dbUrl;
+    private String primaryDbUrl;
+
+    // Sandbox uses a DIRECT (non-pooled) Neon URL (port 5432) if provided.
+    // This prevents session-level SET search_path from leaking back into the
+    // PgBouncer pool and corrupting the next connection's search_path.
+    // In HuggingFace Secrets set: SANDBOX_DATASOURCE_URL = <direct connection string>
+    // Falls back to the primary URL if not configured.
+    @Value("${sandbox.datasource.url:${spring.datasource.url}}")
+    private String sandboxDbUrl;
 
     @Value("${sandbox.datasource.username:jackdsql_reader}")
     private String sandboxUsername;
@@ -42,7 +51,7 @@ public class SandboxDatabaseConfig {
     public DataSource sandboxDataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setUrl(dbUrl);
+        dataSource.setUrl(sandboxDbUrl);   // direct URL, not pooled
         dataSource.setUsername(sandboxUsername);
         dataSource.setPassword(sandboxPassword);
         return dataSource;

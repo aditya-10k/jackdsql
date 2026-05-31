@@ -41,41 +41,54 @@ public class EvaluationService {
             statement.execute("CREATE SCHEMA " + executionId);
             statement.execute("SET search_path TO " + executionId);
 
-            String [] queries = userSql.split(";");
-            ResultSet resultSet = null ;
+            PreviewResponse result;
+            try {
+                String [] queries = userSql.split(";");
+                ResultSet resultSet = null ;
 
-            for(String query : queries){
-                String cleanQuery = query.trim();
-                if(cleanQuery.isEmpty()) continue;
+                for(String query : queries){
+                    String cleanQuery = query.trim();
+                    if(cleanQuery.isEmpty()) continue;
 
-                if(cleanQuery.toUpperCase().startsWith("SELECT")){
-                    String sheildedSql = "SELECT * FROM (" + cleanQuery + ") AS playground_query LIMIT 50";
-                    resultSet = statement.executeQuery(sheildedSql);
+                    if(cleanQuery.toUpperCase().startsWith("SELECT")){
+                        String sheildedSql = "SELECT * FROM (" + cleanQuery + ") AS playground_query LIMIT 50";
+                        resultSet = statement.executeQuery(sheildedSql);
+                    }
+                    else{
+                        statement.execute(cleanQuery);
+                    }
                 }
-                else{
-                    statement.execute(cleanQuery);
+
+                if(resultSet != null){
+                    PreviewResponse response = extractPreviewData(resultSet);
+
+                    List<Map<String, Object>> rawRows = response.rows();
+                    List<Map<String, Object>> extractedResults = new ArrayList<>();
+                    for (Map<String, Object> row : rawRows) {
+                        extractedResults.add(new LinkedHashMap<>(row));
+                    }
+
+                    List<Map<String, String>> normalizedStringRows = normalize(extractedResults);
+
+                    List<Map<String, Object>> finalRows = new ArrayList<>();
+                    for (Map<String, String> normalizedRow : normalizedStringRows) {
+                        finalRows.add(new LinkedHashMap<>(normalizedRow));
+                    }
+
+                    result = new PreviewResponse(response.columns(), finalRows, null);
+                } else {
+                    result = new PreviewResponse(new ArrayList<>(), new ArrayList<>(), "Queries executed successfully , but no data was returned");
                 }
+            } catch (Exception userEx) {
+                result = new PreviewResponse(null, null, userEx.getMessage());
+            } finally {
+                // CRITICAL: Always reset search_path on this connection before it's returned
+                // to PgBouncer's pool. If omitted, the next borrower (e.g. register/login)
+                // gets a connection whose search_path points at the already-dropped sandbox
+                // schema, causing 'relation "users" does not exist'.
+                try { statement.execute("SET search_path TO DEFAULT"); } catch (Exception ignored) {}
             }
-
-            if(resultSet != null){
-                PreviewResponse response = extractPreviewData(resultSet);
-
-                List<Map<String, Object>> rawRows = response.rows();
-                List<Map<String, Object>> extractedResults = new ArrayList<>();
-                for (Map<String, Object> row : rawRows) {
-                    extractedResults.add(new LinkedHashMap<>(row));
-                }
-
-                List<Map<String, String>> normalizedStringRows = normalize(extractedResults);
-
-                List<Map<String, Object>> finalRows = new ArrayList<>();
-                for (Map<String, String> normalizedRow : normalizedStringRows) {
-                    finalRows.add(new LinkedHashMap<>(normalizedRow));
-                }
-
-                return new PreviewResponse(response.columns(), finalRows, null);
-            }
-            return new PreviewResponse(new ArrayList<>(), new ArrayList<>(), "Queries executed successfully , but no data was returned");
+            return result;
         }
         catch (Exception e){
             return new PreviewResponse(null,null,e.getMessage());
@@ -99,29 +112,39 @@ public class EvaluationService {
             statement.execute("CREATE SCHEMA " + executionId);
             statement.execute("SET search_path TO " + executionId);
 
-            if (question.getSchemaSql() != null && !question.getSchemaSql().trim().isEmpty()) {
-                statement.execute(question.getSchemaSql());
-            }
-
-            String [] queries = userSql.split(";");
-            ResultSet resultSet = null;
-
-            for (String query : queries) {
-                String cleanQuery = query.trim();
-                if (cleanQuery.isEmpty()) continue;
-
-                if (cleanQuery.toUpperCase().startsWith("SELECT")) {
-                    String shieldedSql = "SELECT * FROM (" + cleanQuery + ") AS user_query LIMIT 10";
-                    resultSet = statement.executeQuery(shieldedSql);
-                } else {
-                    statement.execute(cleanQuery);
+            PreviewResponse result;
+            try {
+                if (question.getSchemaSql() != null && !question.getSchemaSql().trim().isEmpty()) {
+                    statement.execute(question.getSchemaSql());
                 }
-            }
 
-            if (resultSet != null) {
-                return extractPreviewData(resultSet);
+                String [] queries = userSql.split(";");
+                ResultSet resultSet = null;
+
+                for (String query : queries) {
+                    String cleanQuery = query.trim();
+                    if (cleanQuery.isEmpty()) continue;
+
+                    if (cleanQuery.toUpperCase().startsWith("SELECT")) {
+                        String shieldedSql = "SELECT * FROM (" + cleanQuery + ") AS user_query LIMIT 10";
+                        resultSet = statement.executeQuery(shieldedSql);
+                    } else {
+                        statement.execute(cleanQuery);
+                    }
+                }
+
+                if (resultSet != null) {
+                    result = extractPreviewData(resultSet);
+                } else {
+                    result = new PreviewResponse(new ArrayList<>(), new ArrayList<>(), "Queries executed successfully, but no data was returned");
+                }
+            } catch (Exception userEx) {
+                result = new PreviewResponse(null, null, userEx.getMessage());
+            } finally {
+                // Always reset search_path before returning connection to PgBouncer pool
+                try { statement.execute("SET search_path TO DEFAULT"); } catch (Exception ignored) {}
             }
-            return new PreviewResponse(new ArrayList<>(), new ArrayList<>(), "Queries executed successfully, but no data was returned");
+            return result;
         } catch (Exception e) {
             return new PreviewResponse(null, null, e.getMessage());
         } finally {
@@ -137,31 +160,42 @@ public class EvaluationService {
         try (Connection connection = sandboxJdbcTemplate.getDataSource().getConnection();
              Statement statement = connection.createStatement()) {
 
-            // Execute User Query in actual schema
-            statement.execute("CREATE SCHEMA " + executionIdActual);
-            statement.execute("SET search_path TO " + executionIdActual);
-            if (question.getSchemaSql() != null && !question.getSchemaSql().trim().isEmpty()) {
-                statement.execute(question.getSchemaSql());
+            boolean result;
+            try {
+                // Execute User Query in actual schema
+                statement.execute("CREATE SCHEMA " + executionIdActual);
+                statement.execute("SET search_path TO " + executionIdActual);
+                if (question.getSchemaSql() != null && !question.getSchemaSql().trim().isEmpty()) {
+                    statement.execute(question.getSchemaSql());
+                }
+                List<Map<String, String>> actual = normalize(executeSequentiallyAndGetResults(statement, userSql));
+
+                // Execute Solution Query in expected schema
+                statement.execute("CREATE SCHEMA " + executionIdExpected);
+                statement.execute("SET search_path TO " + executionIdExpected);
+                if (question.getSchemaSql() != null && !question.getSchemaSql().trim().isEmpty()) {
+                    statement.execute(question.getSchemaSql());
+                }
+                List<Map<String, String>> expected = normalize(executeSequentiallyAndGetResults(statement, question.getSolutionQuery()));
+
+                // Sort rows to make comparison order-independent
+                Comparator<Map<String, String>> rowComparator = (a, b) -> a.toString().compareTo(b.toString());
+                actual.sort(rowComparator);
+                expected.sort(rowComparator);
+
+                System.out.println("Expected: " + expected);
+                System.out.println("Actual:   " + actual);
+
+                result = expected.equals(actual);
+            } catch (Exception evalEx) {
+                System.err.println("Evaluation error: " + evalEx.getMessage());
+                evalEx.printStackTrace();
+                result = false;
+            } finally {
+                // Always reset search_path before returning connection to PgBouncer pool
+                try { statement.execute("SET search_path TO DEFAULT"); } catch (Exception ignored) {}
             }
-            List<Map<String, String>> actual = normalize(executeSequentiallyAndGetResults(statement, userSql));
-
-            // Execute Solution Query in expected schema
-            statement.execute("CREATE SCHEMA " + executionIdExpected);
-            statement.execute("SET search_path TO " + executionIdExpected);
-            if (question.getSchemaSql() != null && !question.getSchemaSql().trim().isEmpty()) {
-                statement.execute(question.getSchemaSql());
-            }
-            List<Map<String, String>> expected = normalize(executeSequentiallyAndGetResults(statement, question.getSolutionQuery()));
-
-            // Sort rows to make comparison order-independent
-            Comparator<Map<String, String>> rowComparator = (a, b) -> a.toString().compareTo(b.toString());
-            actual.sort(rowComparator);
-            expected.sort(rowComparator);
-
-            System.out.println("Expected: " + expected);
-            System.out.println("Actual:   " + actual);
-
-            return expected.equals(actual);
+            return result;
         } catch (Exception e) {
             System.err.println("Evaluation error: " + e.getMessage());
             e.printStackTrace();
