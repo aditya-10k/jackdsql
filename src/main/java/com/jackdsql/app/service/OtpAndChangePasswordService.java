@@ -8,6 +8,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.security.SecureRandom;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -61,6 +63,7 @@ public class OtpAndChangePasswordService {
         return AuthenticationResponse.builder().message("OTP send successfully , check mail").build();
     }
 
+    @Transactional
     public AuthenticationResponse verifyOtpAndChangePassword(String otp , String email , String password){
 
         String redisKey = "OTP:"+email ;
