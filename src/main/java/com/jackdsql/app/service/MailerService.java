@@ -18,6 +18,8 @@ public class MailerService {
     private String sourceMail ;
     @Value("${BACKEND_URL:http://localhost:8080}")
     private String backendUrl;
+    @Value("${FRONTEND_URL:https://jackdsql-9be14.web.app}")
+    private String frontendUrl;
 
     public void sendOtp(String toEmail , String otp) throws MessagingException {
 
@@ -240,7 +242,7 @@ public class MailerService {
                 
                 </body>
                 </html>
-                """.formatted(backendUrl, mail, backendUrl);
+                """.formatted(backendUrl, mail, frontendUrl);
 
         mimeMessageHelper.setText(html , true);
         mailSender.send(mimeMessage);
