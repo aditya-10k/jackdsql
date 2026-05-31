@@ -32,8 +32,7 @@ class WebLandingPage extends StatelessWidget {
   const WebLandingPage({super.key});
 
   Future<void> _downloadApk() async {
-    // Modified Google Drive link that triggers immediate download by targeting the export=download endpoint
-    final Uri url = Uri.parse('https://drive.google.com/uc?export=download&id=1rEL0ZaR2ON5ilrnOHXtl1baDWlSmL80Y');
+    final Uri url = Uri.parse('https://drive.google.com/drive/folders/12q_Fvf2j6828B5c4c3ZSRWAdkxz9EN52?usp=sharing');
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch download URL');
     }
