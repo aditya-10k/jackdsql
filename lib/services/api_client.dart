@@ -167,7 +167,7 @@ class _ErrorInterceptor extends Interceptor {
         path.contains('/auth/verifyOtp') ||
         path.contains('/auth/sendotp');
 
-    if ((err.response?.statusCode == 401 || err.response?.statusCode == 403) && !isAuthRoute) {
+    if (err.response?.statusCode == 401 && !isAuthRoute) {
       try {
         String? newAccessToken;
         if (_tokenRefreshFuture != null) {
@@ -188,29 +188,47 @@ class _ErrorInterceptor extends Interceptor {
         }
       } catch (refreshErr) {
         _tokenRefreshFuture = null;
-        _logger.e('Token refresh failed. Logging out...', error: refreshErr);
-        await _apiClient.clearToken();
-        await _apiClient.clearRefreshToken();
-        await HiveService.clearAllCache();
 
-        return handler.next(
-          DioException(
-            requestOptions: err.requestOptions,
-            error: AuthException(
-              message: 'Session expired. Please login again.',
-              code: '401',
-              originalError: refreshErr,
+        // Only fully logout if the refresh endpoint itself rejected the token (401/403).
+        // Network errors (server restarting, timeout) must NOT wipe the session.
+        final isHardAuthFailure = refreshErr is DioException &&
+            (refreshErr.response?.statusCode == 401 ||
+                refreshErr.response?.statusCode == 403);
+
+        if (isHardAuthFailure) {
+          _logger.e('Refresh token rejected by server. Logging out...', error: refreshErr);
+          await _apiClient.clearToken();
+          await _apiClient.clearRefreshToken();
+          await HiveService.clearAllCache();
+
+          return handler.next(
+            DioException(
+              requestOptions: err.requestOptions,
+              error: AuthException(
+                message: 'Session expired. Please login again.',
+                code: '401',
+                originalError: refreshErr,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          // Transient error (network, timeout, server restart) — keep the session alive.
+          _logger.w('Token refresh failed due to transient error (${refreshErr.runtimeType}). Keeping session.');
+        }
       }
     }
 
     AppException? appException;
-    if (err.response?.statusCode == 401 || err.response?.statusCode == 403) {
+    if (err.response?.statusCode == 401) {
       appException = AuthException(
         message: 'Unauthorized. Please login again.',
         code: '401',
+        originalError: err,
+      );
+    } else if (err.response?.statusCode == 403) {
+      appException = AuthException(
+        message: 'Access denied. You do not have permission.',
+        code: '403',
         originalError: err,
       );
     } else if (err.response?.statusCode == 400) {

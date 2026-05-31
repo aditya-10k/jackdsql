@@ -9,6 +9,7 @@ import 'package:jackdsql/constants.dart';
 import 'package:jackdsql/exceptions.dart';
 import 'package:jackdsql/utils/http_client_factory.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
 
 // --- Events ---
 abstract class AiHintEvent extends Equatable {
@@ -87,6 +88,16 @@ class AiHintSseErrorEvent extends AiHintEvent {
   List<Object?> get props => [error];
 }
 
+// Internal event used by polling timer
+class _AiHintPollResultEvent extends AiHintEvent {
+  final String requestId;
+  final String questionId;
+  const _AiHintPollResultEvent({required this.requestId, required this.questionId});
+
+  @override
+  List<Object?> get props => [requestId, questionId];
+}
+
 // --- State ---
 class AiHintState extends Equatable {
   final List<AiKeyInfo> keys;
@@ -145,6 +156,14 @@ class AiHintBloc extends Bloc<AiHintEvent, AiHintState> {
   StreamSubscription? _sseSubscription;
   String? _connectedToken;
 
+  // Polling state for web
+  Timer? _pollTimer;
+  String? _pollingRequestId;
+  String? _pollingQuestionId;
+  int _pollAttempts = 0;
+  static const int _maxPollAttempts = 30; // 30 × 2s = 60s max
+  Dio? _pollDio;
+
   AiHintBloc({required UserRepository userRepository})
       : _userRepository = userRepository,
         super(const AiHintState()) {
@@ -156,6 +175,7 @@ class AiHintBloc extends Bloc<AiHintEvent, AiHintState> {
     on<AiHintDisconnectSseEvent>(_onDisconnectSse);
     on<AiHintSseMessageEvent>(_onSseMessage);
     on<AiHintSseErrorEvent>(_onSseError);
+    on<_AiHintPollResultEvent>(_onPollResult);
   }
 
   Future<void> _onFetchKeys(
@@ -227,6 +247,11 @@ class AiHintBloc extends Bloc<AiHintEvent, AiHintState> {
         lastRequestId: hintResponse.requestId,
         activeHints: updatedHints,
       ));
+
+      // On web, SSE is not supported — start polling for the result
+      if (kIsWeb) {
+        _startPolling(hintResponse.requestId, event.questionId);
+      }
     } catch (e) {
       emit(state.copyWith(
         isStreaming: false,
@@ -240,7 +265,7 @@ class AiHintBloc extends Bloc<AiHintEvent, AiHintState> {
     Emitter<AiHintState> emit,
   ) {
     // SSE via dart:io HttpClient is NOT supported on Flutter Web.
-    // Skip silently — AI hint requests still work via HTTP POST.
+    // Skip silently — web clients use polling instead.
     if (kIsWeb) return;
     if (_sseSubscription != null && _connectedToken == event.token) return;
     _connectedToken = event.token;
@@ -252,6 +277,7 @@ class AiHintBloc extends Bloc<AiHintEvent, AiHintState> {
     Emitter<AiHintState> emit,
   ) {
     _closeSseConnection();
+    _stopPolling();
     _connectedToken = null;
   }
 
@@ -278,8 +304,105 @@ class AiHintBloc extends Bloc<AiHintEvent, AiHintState> {
     ));
   }
 
+  Future<void> _onPollResult(
+    _AiHintPollResultEvent event,
+    Emitter<AiHintState> emit,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token') ?? '';
+
+      _pollDio ??= Dio(BaseOptions(
+        baseUrl: AppConstants.baseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+      ));
+
+      final response = await _pollDio!.get(
+        '/api/ai/hint/result/${event.requestId}',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) => status == 200 || status == 204 || status == 401 || status == 403,
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        // Result is ready
+        _stopPolling();
+        final data = response.data as Map<String, dynamic>;
+        final hint = data['hint'] as String? ?? '';
+
+        final updatedHints = Map<String, String>.from(state.activeHints);
+        updatedHints[event.requestId] = hint;
+
+        emit(state.copyWith(
+          activeHints: updatedHints,
+          isStreaming: false,
+        ));
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        // Auth error — server may still be restarting. Keep polling a few more times.
+        _pollAttempts++;
+        if (_pollAttempts >= _maxPollAttempts) {
+          _stopPolling();
+          emit(state.copyWith(
+            isStreaming: false,
+            streamingError: 'Could not reach AI service. Please try again.',
+          ));
+        }
+      } else {
+        // 204 = still pending, keep polling
+        _pollAttempts++;
+        if (_pollAttempts >= _maxPollAttempts) {
+          _stopPolling();
+          emit(state.copyWith(
+            isStreaming: false,
+            streamingError: 'AI hint timed out. Please try again.',
+          ));
+        }
+      }
+    } catch (e) {
+      _pollAttempts++;
+      if (_pollAttempts >= _maxPollAttempts) {
+        _stopPolling();
+        emit(state.copyWith(
+          isStreaming: false,
+          streamingError: 'Failed to retrieve AI hint. Please try again.',
+        ));
+      }
+    }
+  }
+
+  // ─── Polling (Web) ───────────────────────────────────────────────────────
+
+  void _startPolling(String requestId, String questionId) {
+    _stopPolling();
+    _pollingRequestId = requestId;
+    _pollingQuestionId = questionId;
+    _pollAttempts = 0;
+
+    // Poll every 2 seconds
+    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (_pollingRequestId != null) {
+        add(_AiHintPollResultEvent(
+          requestId: _pollingRequestId!,
+          questionId: _pollingQuestionId ?? '',
+        ));
+      }
+    });
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    _pollingRequestId = null;
+    _pollingQuestionId = null;
+    _pollAttempts = 0;
+  }
+
+  // ─── SSE (Native only) ───────────────────────────────────────────────────
+
   void _startSseConnection(String token) async {
-    if (kIsWeb) return; // Safety guard
+    if (kIsWeb) return;
     _closeSseConnection();
 
     try {
@@ -287,12 +410,7 @@ class AiHintBloc extends Bloc<AiHintEvent, AiHintState> {
       final latestToken = prefs.getString('jwt_token') ?? token;
       _connectedToken = latestToken;
 
-      // Use a simple HTTP-based SSE fallback via Dio's stream request.
-      // This avoids importing dart:io directly which breaks web compilation.
       final url = Uri.parse('${AppConstants.baseUrl}/api/ai/stream');
-
-      // On native platforms, we connect using a streaming HTTP client.
-      // Wrap in try/catch to gracefully handle connection failures.
       await _connectSseNative(url.toString(), latestToken);
     } catch (e) {
       add(AiHintSseErrorEvent('SSE connection failed: $e'));
@@ -300,11 +418,7 @@ class AiHintBloc extends Bloc<AiHintEvent, AiHintState> {
   }
 
   Future<void> _connectSseNative(String url, String token) async {
-    // This method is conditionally compiled only on native.
-    // The kIsWeb guard in _startSseConnection prevents this from running on web.
     try {
-      // We use the jsonDecode approach — import dart:io only at method call level.
-      // This is safe because kIsWeb already returns before this point on web.
       final lines = await _openNativeStream(url, token);
       if (lines == null) return;
 
@@ -336,7 +450,6 @@ class AiHintBloc extends Bloc<AiHintEvent, AiHintState> {
         },
         onError: (e) {
           final errStr = e.toString();
-          // Silently reconnect in 5s on normal connection closed error
           if (errStr.contains('Connection closed') || errStr.contains('HttpException')) {
             Future.delayed(const Duration(seconds: 5), () {
               if (_connectedToken != null && !kIsWeb) {
@@ -362,12 +475,8 @@ class AiHintBloc extends Bloc<AiHintEvent, AiHintState> {
     }
   }
 
-  // Returns a stream of SSE lines. Uses dynamic to avoid dart:io at compile time.
   Future<Stream<String>?> _openNativeStream(String url, String token) async {
-    // This is only called from _connectSseNative, which is guarded by kIsWeb.
-    // We use late binding through dynamic to avoid compilation failures on web.
     try {
-      // ignore: avoid_dynamic_calls
       final dynamic ioImport = _getHttpClient();
       if (ioImport == null) return null;
 
@@ -404,6 +513,8 @@ class AiHintBloc extends Bloc<AiHintEvent, AiHintState> {
   @override
   Future<void> close() {
     _closeSseConnection();
+    _stopPolling();
+    _pollDio?.close();
     return super.close();
   }
 }
